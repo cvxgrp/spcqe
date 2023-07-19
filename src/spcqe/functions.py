@@ -10,12 +10,12 @@ from scipy import stats
 from scipy.stats import norm
 
 
-def individual_bases_3(K, P1, P2, P3):
+def individual_bases_3(K, T, P1, P2, P3):
     w1 = 2*pi/P1
     w2 = 2*pi/P2
     w3 = 2*pi/P3
-    Base = np.zeros((P1, 3*(2*K)+1))
-    for t in range(P1):
+    Base = np.zeros((T, 3*(2*K)+1))
+    for t in range(T):
         Basis = [1]
         for i in range(1, K+1):
             Basis.append(math.cos(i*w1*t))
@@ -35,11 +35,11 @@ def individual_bases_3(K, P1, P2, P3):
     return Bases  # (P1,3*2K+1)
 
 
-def individual_bases_2(K, P1, P3):
+def individual_bases_2(K, T, P1, P3):
     w1 = 2*pi/P1
     w3 = 2*pi/P3
-    Base = np.zeros((P1, 2*(2*K)+1))
-    for t in range(P1):
+    Base = np.zeros((T, 2*(2*K)+1))
+    for t in range(T):
         Basis = [1]
         for i in range(1, K+1):
             Basis.append(math.cos(i*w1*t))
@@ -64,8 +64,8 @@ def cross_bases(B_P1, B_P2):
     return result
 
 
-def basis_3(K, P1, P2, P3):
-    Bases = individual_bases_3(K, P1, P2, P3)
+def basis_3(K, T, P1, P2, P3):
+    Bases = individual_bases_3(K, T, P1, P2, P3)
     B_P0 = Bases[0]
     B_P1 = Bases[1]
     B_P2 = Bases[2]
@@ -77,8 +77,8 @@ def basis_3(K, P1, P2, P3):
     return B
 
 
-def basis_2(K, P1, P3):
-    Bases = individual_bases_2(K, P1, P3)
+def basis_2(K, T, P1, P3):
+    Bases = individual_bases_2(K, T, P1, P3)
     B_P0 = Bases[0]
     B_P1 = Bases[1]
     B_P3 = Bases[2]
@@ -150,17 +150,17 @@ def pinball_slopes(percentiles):
     return a, b
 
 
-def fit_quantiles(y1, B, D, percentiles):
-    num_years = y1.shape[1]
+def fit_quantiles(y1, K, P1, P2, P3, l, percentiles):
+    T = y1.shape[0]
+    B = basis_3(K, T, P1, P2, P3)
+    D = regularization_matrix_3(K, l, P1, P2, P3)
     a, b = pinball_slopes(percentiles)
     num_quantiles = len(a)
     Theta = cp.Variable((B.shape[1], num_quantiles))
     BT = B@Theta
-    obj = 0
-    for i in range(num_years):
-        nonnanindex = ~np.isnan(y1[:, i])
-        Var = y1[nonnanindex, i].reshape(-1, 1) - BT[nonnanindex]
-        obj += cp.sum(Var@np.diag(a)+cp.abs(Var)@np.diag(b))
+    nonnanindex = ~np.isnan(y1[:, 0])
+    Var = y1[nonnanindex, 0].reshape(-1, 1) - BT[nonnanindex]
+    obj = cp.sum(Var@np.diag(a)+cp.abs(Var)@np.diag(b))
     # ensures quantiles are in order and prevents point masses ie minimum distance.
     cons = [cp.diff(BT, axis=1) >= 0.01]
     # cons+=[BT[:,0]>=0] #ensures quantiles are nonnegative
