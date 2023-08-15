@@ -11,48 +11,75 @@ from scipy.stats import norm
 
 
 def individual_bases_3(K, T, P1, P2, P3):
-    w1 = 2*pi/P1
-    w2 = 2*pi/P2
-    w3 = 2*pi/P3
-    Base = np.zeros((T, 3*(2*K)+1))
-    for t in range(T):
-        Basis = [1]
-        for i in range(1, K+1):
-            Basis.append(math.cos(i*w1*t))
-            Basis.append(math.sin(i*w1*t))
-        for i in range(1, K+1):
-            Basis.append(math.cos(i*w2*t))
-            Basis.append(math.sin(i*w2*t))
-        for i in range(1, K+1):
-            Basis.append(math.cos(i*w3*t))
-            Basis.append(math.sin(i*w3*t))
-        Base[t, :] = Basis
-    B_P0 = Base[:, 0].reshape(-1, 1)
-    B_P1 = Base[:, 1:2*K+1]
-    B_P2 = Base[:, 2*K+1:2*2*K+1]
-    B_P3 = Base[:, 2*2*K+1:2*2*2*K+1]
-    Bases = [B_P0, B_P1, B_P2, B_P3]
-    return Bases  # (P1,3*2K+1)
+    w1 = 2 * np.pi / P1
+    w2 = 2 * np.pi / P2
+    w3 = 2 * np.pi / P3
+
+    i_values = np.arange(1, K+1)[:, np.newaxis]  # Column vector
+    t_values = np.arange(T)  # Row vector
+
+    # Computing the cos and sin matrices for each period
+    B_P1_cos = np.cos(i_values * w1 * t_values).T
+    B_P1_sin = np.sin(i_values * w1 * t_values).T
+
+    B_P2_cos = np.cos(i_values * w2 * t_values).T
+    B_P2_sin = np.sin(i_values * w2 * t_values).T
+
+    B_P3_cos = np.cos(i_values * w3 * t_values).T
+    B_P3_sin = np.sin(i_values * w3 * t_values).T
+
+    # Interleave the results for each period using advanced indexing
+    B_P1 = np.empty((T, 2*K), dtype=float)
+    B_P1[:, ::2] = B_P1_cos
+    B_P1[:, 1::2] = B_P1_sin
+
+    B_P2 = np.empty((T, 2*K), dtype=float)
+    B_P2[:, ::2] = B_P2_cos
+    B_P2[:, 1::2] = B_P2_sin
+
+    B_P3 = np.empty((T, 2*K), dtype=float)
+    B_P3[:, ::2] = B_P3_cos
+    B_P3[:, 1::2] = B_P3_sin
+
+    # Add B_PL and B_P0
+    v = np.sqrt(3)
+    B_PL = np.linspace(-v, v, T).reshape(-1, 1)
+    B_P0 = np.ones((T, 1))
+
+    Base = [B_PL, B_P0, B_P1, B_P2, B_P3]
+    return Base
 
 
 def individual_bases_2(K, T, P1, P3):
-    w1 = 2*pi/P1
-    w3 = 2*pi/P3
-    Base = np.zeros((T, 2*(2*K)+1))
-    for t in range(T):
-        Basis = [1]
-        for i in range(1, K+1):
-            Basis.append(math.cos(i*w1*t))
-            Basis.append(math.sin(i*w1*t))
-        for i in range(1, K+1):
-            Basis.append(math.cos(i*w3*t))
-            Basis.append(math.sin(i*w3*t))
-        Base[t, :] = Basis
-    B_P0 = Base[:, 0].reshape(-1, 1)
-    B_P1 = Base[:, 1:2*K+1]
-    B_P3 = Base[:, 2*K+1:2*2*K+1]
-    Bases = [B_P0, B_P1, B_P3]
-    return Bases  # (P1,2*2K+1)
+    w1 = 2 * np.pi / P1
+    w3 = 2 * np.pi / P3
+
+    i_values = np.arange(1, K+1)[:, np.newaxis]  # Column vector
+    t_values = np.arange(T)  # Row vector
+
+    # Computing the cos and sin matrices for each period
+    B_P1_cos = np.cos(i_values * w1 * t_values).T
+    B_P1_sin = np.sin(i_values * w1 * t_values).T
+
+    B_P3_cos = np.cos(i_values * w3 * t_values).T
+    B_P3_sin = np.sin(i_values * w3 * t_values).T
+
+    # Interleave the results for each period using advanced indexing
+    B_P1 = np.empty((T, 2*K), dtype=float)
+    B_P1[:, ::2] = B_P1_cos
+    B_P1[:, 1::2] = B_P1_sin
+
+    B_P3 = np.empty((T, 2*K), dtype=float)
+    B_P3[:, ::2] = B_P3_cos
+    B_P3[:, 1::2] = B_P3_sin
+
+    # Add B_PL and B_P0
+    v = np.sqrt(3)
+    B_PL = np.linspace(-v, v, T).reshape(-1, 1)
+    B_P0 = np.ones((T, 1))
+
+    Base = [B_PL, B_P0, B_P1, B_P3]
+    return Base
 
 
 def cross_bases(B_P1, B_P2):
@@ -66,80 +93,77 @@ def cross_bases(B_P1, B_P2):
 
 def basis_3(K, T, P1, P2, P3):
     Bases = individual_bases_3(K, T, P1, P2, P3)
-    B_P0 = Bases[0]
-    B_P1 = Bases[1]
-    B_P2 = Bases[2]
-    B_P3 = Bases[3]
+    B_PL = Bases[0]
+    B_P0 = Bases[1]
+    B_P1 = Bases[2]
+    B_P2 = Bases[3]
+    B_P3 = Bases[4]
     C_12 = cross_bases(B_P1, B_P2)
     C_13 = cross_bases(B_P1, B_P3)
     C_23 = cross_bases(B_P2, B_P3)
-    B = np.hstack([B_P0, B_P1, B_P2, B_P3, C_12, C_13, C_23])
+    B = np.hstack([B_PL, B_P0, B_P1, B_P2, B_P3, C_12, C_13, C_23])
     return B
 
 
 def basis_2(K, T, P1, P3):
     Bases = individual_bases_2(K, T, P1, P3)
-    B_P0 = Bases[0]
-    B_P1 = Bases[1]
-    B_P3 = Bases[2]
+    B_PL = Bases[0]
+    B_P0 = Bases[1]
+    B_P1 = Bases[2]
+    B_P3 = Bases[3]
     C_13 = cross_bases(B_P1, B_P3)
-    B = np.hstack([B_P0, B_P1, B_P3, C_13])
+    B = np.hstack([B_PL, B_P0, B_P1, B_P3, C_13])
     return B
 
 
 def regularization_matrix_3(K, l, P1, P2, P3):
-    l1 = l*(2*np.pi)/np.sqrt(P1)
-    l2 = l*(2*np.pi)/np.sqrt(P2)
-    l3 = l*(2*np.pi)/np.sqrt(P3)
-    l4 = l*(2*np.pi)/np.sqrt(P2)
-    l5 = l*(2*np.pi)/np.sqrt(P3)
-    l6 = l*(2*np.pi)/np.sqrt(P3)
-    # Do not penalize 0'th Fourier coefficient corresponding to DC signal.
-    coeff_i = [0]
-    for i in range(1, K+1):
-        coeff_i.append(l1*i)
-        coeff_i.append(l1*i)
-    for i in range(1, K+1):
-        coeff_i.append(l2*i)
-        coeff_i.append(l2*i)
-    for i in range(1, K+1):
-        coeff_i.append(l3*i)
-        coeff_i.append(l3*i)
-    for j in range(0, 2*K):
-        for i in range(1, K+1):
-            coeff_i.append(l4*i)
-            coeff_i.append(l4*i)
-    for j in range(0, 2*K):
-        for i in range(1, K+1):
-            coeff_i.append(l5*i)
-            coeff_i.append(l5*i)
-    for j in range(0, 2*K):
-        for i in range(1, K+1):
-            coeff_i.append(l6*i)
-            coeff_i.append(l6*i)
-    coeff_i = np.array(coeff_i)
-    D = np.diag(coeff_i)  # [0,1,1,4,4,9,9,...,K^2,K^2] diagonal matrix
+    l1 = l * (2 * np.pi) / np.sqrt(P1)
+    l2 = l * (2 * np.pi) / np.sqrt(P2)
+    l3 = l * (2 * np.pi) / np.sqrt(P3)
+    l4 = l * (2 * np.pi) / np.sqrt(P2)
+    l5 = l * (2 * np.pi) / np.sqrt(P3)
+    l6 = l * (2 * np.pi) / np.sqrt(P3)
+
+    # Create a sequence of values from 1 to K (repeated for cosine and sine)
+    i_values = np.repeat(np.arange(1, K+1), 2)
+
+    # Create blocks of coefficients
+    block1 = i_values * l1
+    block2 = i_values * l2
+    block3 = i_values * l3
+    block4 = np.tile(i_values * l4, 2 * K)
+    block5 = np.tile(i_values * l5, 2 * K)
+    block6 = np.tile(i_values * l6, 2 * K)
+
+    # Combine the blocks to form the coefficient array
+    coeff_i = np.concatenate(
+        [[0, 0], block1, block2, block3, block4, block5, block6])
+
+    # Create the diagonal matrix
+    D = np.diag(coeff_i)
+
     return D
 
 
 def regularization_matrix_2(K, l, P1, P3):
-    l1 = l*(2*np.pi)/np.sqrt(P1)
-    l3 = l*(2*np.pi)/np.sqrt(P3)
-    l5 = l*(2*np.pi)/np.sqrt(P3)
-    # Do not penalize 0'th Fourier coefficient corresponding to DC signal.
-    coeff_i = [0]
-    for i in range(1, K+1):
-        coeff_i.append(l1*i)
-        coeff_i.append(l1*i)
-    for i in range(1, K+1):
-        coeff_i.append(l3*i)
-        coeff_i.append(l3*i)
-    for j in range(0, 2*K):
-        for i in range(1, K+1):
-            coeff_i.append(l5*i)
-            coeff_i.append(l5*i)
-    coeff_i = np.array(coeff_i)
-    D = np.diag(coeff_i)  # [0,1,1,4,4,9,9,...,K^2,K^2] diagonal matrix
+    l1 = l * (2 * np.pi) / np.sqrt(P1)
+    l3 = l * (2 * np.pi) / np.sqrt(P3)
+    l5 = l * (2 * np.pi) / np.sqrt(P3)
+
+    # Create a sequence of values from 1 to K (repeated for cosine and sine)
+    i_values = np.repeat(np.arange(1, K+1), 2)
+
+    # Create blocks of coefficients
+    block1 = i_values * l1
+    block2 = i_values * l3
+    block3 = np.tile(i_values * l5, 2 * K)
+
+    # Combine the blocks to form the coefficient array
+    coeff_i = np.concatenate([[0, 0], block1, block2, block3])
+
+    # Create the diagonal matrix
+    D = np.diag(coeff_i)
+
     return D
 
 
@@ -150,16 +174,16 @@ def pinball_slopes(percentiles):
     return a, b
 
 
-def fit_quantiles(y1, K, P1, P2, P3, l, percentiles):
-    T = y1.shape[0]
+def fit_quantiles3(y1, K, P1, P2, P3, l, percentiles):
+    T = len(y1)
     B = basis_3(K, T, P1, P2, P3)
     D = regularization_matrix_3(K, l, P1, P2, P3)
     a, b = pinball_slopes(percentiles)
     num_quantiles = len(a)
     Theta = cp.Variable((B.shape[1], num_quantiles))
     BT = B@Theta
-    nonnanindex = ~np.isnan(y1[:, 0])
-    Var = y1[nonnanindex, 0].reshape(-1, 1) - BT[nonnanindex]
+    nonnanindex = ~np.isnan(y1)
+    Var = y1[nonnanindex].reshape(-1, 1) - BT[nonnanindex]
     obj = cp.sum(Var@np.diag(a)+cp.abs(Var)@np.diag(b))
     # ensures quantiles are in order and prevents point masses ie minimum distance.
     cons = [cp.diff(BT, axis=1) >= 0.01]
@@ -170,22 +194,27 @@ def fit_quantiles(y1, K, P1, P2, P3, l, percentiles):
     prob = cp.Problem(cp.Minimize(obj), cons)
     prob.solve(verbose=True, solver=cp.MOSEK)
     Q = B@Theta.value
-    # --------------------
-    Q_left_tail = Q[:, 0]-1
-    Q_left_tail = Q_left_tail.reshape(-1, 1)
-    Q_right_tail = Q[:, -1]+1
-    Q_right_tail = Q_right_tail.reshape(-1, 1)
-    Q_extended = np.hstack([Q_left_tail, Q, Q_right_tail])
-    # --------------------
-    percentiles = np.asarray(percentiles)
-    percentiles = percentiles/100
-    g = np.zeros((Q_extended.shape[0], len(percentiles)+2))
-    g[:, 1:-1] = stats.norm.ppf(percentiles)
-    # --------------------
-    left_tail_slope = 1*(g[:, 2]-g[:, 1])/(Q_extended[:, 2]-Q_extended[:, 1])
-    right_tail_slope = 1*(g[:, -2]-g[:, -3]) / \
-        (Q_extended[:, -2]-Q_extended[:, -3])
-    g[:, 0] = g[:, 1]-left_tail_slope
-    g[:, -1] = g[:, -2]+right_tail_slope
-    GQ_extended = g
-    return Q, Q_extended, GQ_extended
+    return Q
+
+
+def fit_quantiles2(y1, K, P1, P3, l, percentiles):
+    T = len(y1)
+    B = basis_2(K, T, P1, P3)
+    D = regularization_matrix_2(K, l, P1, P3)
+    a, b = pinball_slopes(percentiles)
+    num_quantiles = len(a)
+    Theta = cp.Variable((B.shape[1], num_quantiles))
+    BT = B@Theta
+    nonnanindex = ~np.isnan(y1)
+    Var = y1[nonnanindex].reshape(-1, 1) - BT[nonnanindex]
+    obj = cp.sum(Var@np.diag(a)+cp.abs(Var)@np.diag(b))
+    # ensures quantiles are in order and prevents point masses ie minimum distance.
+    cons = [cp.diff(BT, axis=1) >= 0.01]
+    # cons+=[BT[:,0]>=0] #ensures quantiles are nonnegative
+    Z = D @ Theta
+    regularization = cp.sum_squares(Z)
+    obj += regularization
+    prob = cp.Problem(cp.Minimize(obj), cons)
+    prob.solve(verbose=True, solver=cp.MOSEK)
+    Q = B@Theta.value
+    return Q
