@@ -83,11 +83,13 @@ def individual_bases_2(K, T, P1, P3):
 
 
 def cross_bases(B_P1, B_P2):
-    # Compute the outer products for each pair of corresponding rows
-    outer_products = [np.outer(B_P1[i], B_P2[i]).flatten(
-    ).reshape(-1, 1) for i in range(B_P1.shape[0])]
-    # Concatenate along the first axis to create a 2D array
-    result = np.concatenate(outer_products, axis=1).T
+    # Reshape both arrays to introduce a new axis for broadcasting
+    B_P1_new = B_P1[:, :, None]
+    B_P2_new = B_P2[:, None, :]
+    # Use broadcasting to compute the outer product for each row
+    result = B_P1_new * B_P2_new
+    # Reshape the result to the desired shape
+    result = result.reshape(result.shape[0], -1)
     return result
 
 
