@@ -16,4 +16,5 @@ license = {text = "BSD-2-Clause"}
 dependencies = [
     "numpy",
     "cvxpy",
+    "scikit-learn"
 ]

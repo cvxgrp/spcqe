@@ -1,6 +1,6 @@
 import numpy as np
 import cvxpy as cp
-from spcqe.functions import cross_bases
+from spcqe.functions import cross_bases, pinball_slopes
 
 
 def individual_bases_3(K, T, P1, P2, P3):
@@ -149,13 +149,6 @@ def regularization_matrix_2(K, l, P1, P3):
     D = np.diag(coeff_i)
 
     return D
-
-
-def pinball_slopes(percentiles):
-    percentiles = np.asarray(percentiles)
-    a = (percentiles-50)*(0.01)
-    b = (0.5)*np.ones((len(a),))
-    return a, b
 
 
 def fit_quantiles3(y1, K, P1, P2, P3, l, percentiles):

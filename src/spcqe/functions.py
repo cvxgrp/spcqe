@@ -63,3 +63,10 @@ def cross_bases(B_P1, B_P2):
     # Reshape the result to the desired shape
     result = result.reshape(result.shape[0], -1)
     return result
+
+
+def pinball_slopes(percentiles):
+    percentiles = np.asarray(percentiles)
+    a = (percentiles-50)*(0.01)
+    b = (0.5)*np.ones((len(a),))
+    return a, b
