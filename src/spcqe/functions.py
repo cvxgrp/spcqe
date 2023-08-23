@@ -32,6 +32,39 @@ def basis(K, T, P):
     return B
 
 
+def make_regularization_matrix(K, l, P):
+    Ps = np.atleast_1d(P)
+    ls_original = [l * (2 * np.pi) / np.sqrt(P) for P in Ps]
+    ls_cross =
+    l1 = l * (2 * np.pi) / np.sqrt(P1)
+    l2 = l * (2 * np.pi) / np.sqrt(P2)
+    l3 = l * (2 * np.pi) / np.sqrt(P3)
+    l4 = l * (2 * np.pi) / np.sqrt(P2)
+    l5 = l * (2 * np.pi) / np.sqrt(P3)
+    l6 = l * (2 * np.pi) / np.sqrt(P3)
+
+    # Create a sequence of values from 1 to K (repeated for cosine and sine)
+    i_values = np.repeat(np.arange(1, K+1), 2)
+
+    # Create blocks of coefficients
+    block1 = i_values * l1
+    block2 = i_values * l2
+    block3 = i_values * l3
+    block4 = np.tile(i_values * l4, 2 * K)
+    block5 = np.tile(i_values * l5, 2 * K)
+    block6 = np.tile(i_values * l6, 2 * K)
+
+    # Combine the blocks to form the coefficient array
+    coeff_i = np.concatenate(
+        [[0, 0], block1, block2, block3, block4, block5, block6])
+
+    # Create the diagonal matrix
+    D = np.diag(coeff_i)
+
+    return D
+
+
+
 def individual_bases_3(K, T, P1, P2, P3):
     w1 = 2 * np.pi / P1
     w2 = 2 * np.pi / P2
