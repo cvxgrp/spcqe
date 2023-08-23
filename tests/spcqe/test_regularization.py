@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
-from spcqe.functions import make_regularization_matrix, regularization_matrix_3, regularization_matrix_2
+from spcqe.functions import make_regularization_matrix
+from spcqe.functions_old import regularization_matrix_3, regularization_matrix_2
 
 
 class TestBasis(unittest.TestCase):

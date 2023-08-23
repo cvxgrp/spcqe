@@ -1,8 +1,7 @@
 import unittest
 import numpy as np
-import sys
-from pathlib import Path
-from spcqe.functions import basis, basis_3, basis_2
+from spcqe.functions import basis
+from spcqe.functions_old import basis_3, basis_2
 
 
 class TestBasis(unittest.TestCase):
