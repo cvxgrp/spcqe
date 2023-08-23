@@ -6,7 +6,8 @@ requires = ["setuptools", "wheel"]  # PEP 508 specifications.
 name = "spcqe"
 version = "0.0.1a"
 authors = [
-    {name = "Josiah Carberry", email = "josiah_carberry@brown.edu"},
+    {name = "Mehmet Giray Ogut", email = "giray98@stanford.edu"},
+    {name = "Bennet Meyers", email = "bennetm@stanford.edu"}
 ]
 description = "Smooth periodic consistent quantile estimation"
 readme = "README.md"
