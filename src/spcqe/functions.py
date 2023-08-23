@@ -3,25 +3,25 @@ import cvxpy as cp
 from itertools import combinations
 
 
-def basis(K, T, P):
-    Ps = np.atleast_1d(P)
+def basis(num_harmonics, length, periods):
+    Ps = np.atleast_1d(periods)
     ws = [2 * np.pi / P for P in Ps]
-    i_values = np.arange(1, K + 1)[:, np.newaxis]  # Column vector
-    t_values = np.arange(T)  # Row vector
+    i_values = np.arange(1, num_harmonics + 1)[:, np.newaxis]  # Column vector
+    t_values = np.arange(length)  # Row vector
     # Computing the cos and sin matrices for each period
     B_cos_list = [np.cos(i_values * w * t_values).T for w in ws]
     B_sin_list = [np.sin(i_values * w * t_values).T for w in ws]
 
     # Interleave the results for each period using advanced indexing
-    B_fourier = [np.empty((T, 2 * K), dtype=float) for _ in range(len(Ps))]
+    B_fourier = [np.empty((length, 2 * num_harmonics), dtype=float) for _ in range(len(Ps))]
     for ix in range(len(Ps)):
         B_fourier[ix][:, ::2] = B_cos_list[ix]
         B_fourier[ix][:, 1::2] = B_sin_list[ix]
 
     # offset and linear terms
     v = np.sqrt(3)
-    B_PL = np.linspace(-v, v, T).reshape(-1, 1)
-    B_P0 = np.ones((T, 1))
+    B_PL = np.linspace(-v, v, length).reshape(-1, 1)
+    B_P0 = np.ones((length, 1))
     B0 = [B_PL, B_P0]
 
     # cross terms, this handles the case of no cross terms gracefully (empty list)
@@ -32,18 +32,18 @@ def basis(K, T, P):
     return B
 
 
-def make_regularization_matrix(K, l, P):
-    Ps = np.atleast_1d(P)
-    ls_original = [l * (2 * np.pi) / np.sqrt(P) for P in Ps]
+def make_regularization_matrix(num_harmonics, weight, periods):
+    Ps = np.atleast_1d(periods)
+    ls_original = [weight * (2 * np.pi) / np.sqrt(P) for P in Ps]
     # this handles the case of no cross terms gracefully (empty list)
-    ls_cross = [l * (2 * np.pi) / np.sqrt(max(*c)) for c in combinations(Ps, 2)]
+    ls_cross = [weight * (2 * np.pi) / np.sqrt(max(*c)) for c in combinations(Ps, 2)]
 
     # Create a sequence of values from 1 to K (repeated for cosine and sine)
-    i_values = np.repeat(np.arange(1, K+1), 2)
+    i_values = np.repeat(np.arange(1, num_harmonics + 1), 2)
 
     # Create blocks of coefficients
     blocks_original = [i_values * lx for lx in ls_original]
-    blocks_cross = [np.tile(i_values * lx, 2*K) for lx in ls_cross]
+    blocks_cross = [np.tile(i_values * lx, 2 * num_harmonics) for lx in ls_cross]
 
     # Combine the blocks to form the coefficient array
     coeff_i = np.concatenate([np.zeros(2)] + blocks_original + blocks_cross)
