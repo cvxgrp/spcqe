@@ -1,6 +1,2 @@
 numpy
 cvxpy
-scipy
-pandas
-matplotlib
-math

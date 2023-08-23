@@ -1,13 +1,35 @@
-import pandas as pd
 import numpy as np
 import cvxpy as cp
-import matplotlib.pyplot as plt
-import math
-from math import pi
-import time
-import scipy as sp
-from scipy import stats
-from scipy.stats import norm
+from itertools import combinations
+
+
+def basis(K, T, P):
+    Ps = np.atleast_1d(P)
+    ws = [2 * np.pi / P for P in Ps]
+    i_values = np.arange(1, K + 1)[:, np.newaxis]  # Column vector
+    t_values = np.arange(T)  # Row vector
+    # Computing the cos and sin matrices for each period
+    B_cos_list = [np.cos(i_values * w * t_values).T for w in ws]
+    B_sin_list = [np.sin(i_values * w * t_values).T for w in ws]
+
+    # Interleave the results for each period using advanced indexing
+    B_fourier = [np.empty((T, 2 * K), dtype=float) for _ in range(len(Ps))]
+    for ix in range(len(Ps)):
+        B_fourier[ix][:, ::2] = B_cos_list[ix]
+        B_fourier[ix][:, 1::2] = B_sin_list[ix]
+
+    # offset and linear terms
+    v = np.sqrt(3)
+    B_PL = np.linspace(-v, v, T).reshape(-1, 1)
+    B_P0 = np.ones((T, 1))
+    B0 = [B_PL, B_P0]
+
+    # cross terms
+    C = [cross_bases(*base_tuple) for base_tuple in combinations(B_fourier, 2)]
+
+    B_list = B0 + B_fourier + C
+    B = np.hstack(B_list)
+    return B
 
 
 def individual_bases_3(K, T, P1, P2, P3):
