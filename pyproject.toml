@@ -1,0 +1,17 @@
+[build-system]
+# Minimum requirements for the build system to execute.
+requires = ["setuptools", "wheel"]  # PEP 508 specifications.
+
+[project]
+name = "spcqe"
+authors = [
+    {name = "Josiah Carberry", email = "josiah_carberry@brown.edu"},
+]
+description = "Smooth periodic consistent quantile estimation"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "BSD-2-Clause"}
+dependencies = [
+    "numpy",
+    "cvxpy",
+]

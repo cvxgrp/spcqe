@@ -24,7 +24,7 @@ def basis(K, T, P):
     B_P0 = np.ones((T, 1))
     B0 = [B_PL, B_P0]
 
-    # cross terms
+    # cross terms, this handles the case of no cross terms gracefully (empty list)
     C = [cross_bases(*base_tuple) for base_tuple in combinations(B_fourier, 2)]
 
     B_list = B0 + B_fourier + C
@@ -35,28 +35,18 @@ def basis(K, T, P):
 def make_regularization_matrix(K, l, P):
     Ps = np.atleast_1d(P)
     ls_original = [l * (2 * np.pi) / np.sqrt(P) for P in Ps]
-    ls_cross =
-    l1 = l * (2 * np.pi) / np.sqrt(P1)
-    l2 = l * (2 * np.pi) / np.sqrt(P2)
-    l3 = l * (2 * np.pi) / np.sqrt(P3)
-    l4 = l * (2 * np.pi) / np.sqrt(P2)
-    l5 = l * (2 * np.pi) / np.sqrt(P3)
-    l6 = l * (2 * np.pi) / np.sqrt(P3)
+    # this handles the case of no cross terms gracefully (empty list)
+    ls_cross = [l * (2 * np.pi) / np.sqrt(max(*c)) for c in combinations(Ps, 2)]
 
     # Create a sequence of values from 1 to K (repeated for cosine and sine)
     i_values = np.repeat(np.arange(1, K+1), 2)
 
     # Create blocks of coefficients
-    block1 = i_values * l1
-    block2 = i_values * l2
-    block3 = i_values * l3
-    block4 = np.tile(i_values * l4, 2 * K)
-    block5 = np.tile(i_values * l5, 2 * K)
-    block6 = np.tile(i_values * l6, 2 * K)
+    blocks_original = [i_values * lx for lx in ls_original]
+    blocks_cross = [np.tile(i_values * lx, 2*K) for lx in ls_cross]
 
     # Combine the blocks to form the coefficient array
-    coeff_i = np.concatenate(
-        [[0, 0], block1, block2, block3, block4, block5, block6])
+    coeff_i = np.concatenate([np.zeros(2)] + blocks_original + blocks_cross)
 
     # Create the diagonal matrix
     D = np.diag(coeff_i)
