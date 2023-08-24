@@ -36,7 +36,7 @@ def make_regularization_matrix(num_harmonics, weight, periods):
     Ps = np.atleast_1d(periods)
     ls_original = [weight * (2 * np.pi) / np.sqrt(P) for P in Ps]
     # this handles the case of no cross terms gracefully (empty list)
-    ls_cross = [weight * (2 * np.pi) / np.sqrt(max(*c)) for c in combinations(Ps, 2)]
+    ls_cross = [weight * (2 * np.pi) / np.sqrt(min(*c)) for c in combinations(Ps, 2)]
 
     # Create a sequence of values from 1 to K (repeated for cosine and sine)
     i_values = np.repeat(np.arange(1, num_harmonics + 1), 2)

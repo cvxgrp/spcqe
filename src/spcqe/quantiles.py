@@ -6,11 +6,13 @@ PERCENTILES = (2, 10, 20, 30, 40, 50, 60, 70, 80, 90, 98)
 
 
 class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
-    def __init__(self, num_harmonics, periods, percentiles=PERCENTILES, weight=1, solver='MOSEK', verbose=False):
+    def __init__(self, num_harmonics, periods, percentiles=PERCENTILES, weight=1, eps=0.01, solver='MOSEK',
+                 verbose=False):
         self.num_harmonics = num_harmonics
         self.periods = periods
         self.percentiles = percentiles
         self.weight = weight
+        self.eps = eps
         self.solver = solver
         self.verbose = verbose
         self.length = None
@@ -24,7 +26,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         self.length = len(data)
         if self.solver.lower() in ['mosek', 'osqp', 'scs', 'ecos']:
             quantiles, basis = solve_cvx(data, self.num_harmonics, self.periods, self.weight, self.percentiles,
-                                         solver=self.solver.upper(), verbose=self.verbose)
+                                         self.eps, solver=self.solver.upper(), verbose=self.verbose)
         else:
             raise NotImplementedError('non-cvxpy solution methods not yet implemented')
         self.basis = basis
