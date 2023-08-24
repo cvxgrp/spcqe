@@ -11,7 +11,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
                  verbose=False):
         self.num_harmonics = num_harmonics
         self.periods = periods
-        self.percentiles = percentiles
+        self.percentiles = np.atleast_1d(np.asarray(percentiles))
         self.weight = weight
         self.eps = eps
         self.solver = solver

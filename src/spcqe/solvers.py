@@ -16,7 +16,7 @@ def make_cvx_problem(data, num_harmonics, periods, weight, percentiles, eps):
     B = basis(num_harmonics, length, periods)
     D = make_regularization_matrix(num_harmonics, weight, periods)
     a, b = pinball_slopes(percentiles)
-    num_quantiles = len(a)
+    num_quantiles = len(percentiles)
     Theta = cp.Variable((B.shape[1], num_quantiles))
     BT = B @ Theta
     nonnanindex = ~np.isnan(data)
