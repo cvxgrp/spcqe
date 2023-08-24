@@ -23,7 +23,10 @@ def make_cvx_problem(data, num_harmonics, periods, weight, percentiles, eps):
     Var = data[nonnanindex].reshape(-1, 1) - BT[nonnanindex]
     obj = cp.sum(Var @ np.diag(a) + cp.abs(Var) @ np.diag(b))
     # ensures quantiles are in order and prevents point masses ie minimum distance.
-    cons = [cp.diff(BT, axis=1) >= eps]
+    if num_quantiles > 1:
+        cons = [cp.diff(BT, axis=1) >= eps]
+    else:
+        cons = []
     # cons+=[BT[:,0]>=0] #ensures quantiles are nonnegative
     Z = D @ Theta
     regularization = cp.sum_squares(Z)
