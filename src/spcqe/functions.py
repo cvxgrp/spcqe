@@ -65,8 +65,8 @@ def cross_bases(B_P1, B_P2):
     return result
 
 
-def pinball_slopes(percentiles):
-    percentiles = np.asarray(percentiles)
-    a = (percentiles-50)*(0.01)
+def pinball_slopes(quantiles):
+    percentiles = np.asarray(quantiles)
+    a = (quantiles-.5)
     b = (0.5)*np.ones((len(a),))
     return a, b
