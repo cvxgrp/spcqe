@@ -1,4 +1,5 @@
 import numpy as np
+from time import time
 from sklearn.base import TransformerMixin, BaseEstimator
 from spcqe.solvers import solve_cvx
 
@@ -18,8 +19,10 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         self.length = None
         self.basis = None
         self.quantiles = None
+        self.fit_time = None
 
     def fit(self, X, y=None):
+        ti = time()
         data = np.asarray(X)
         if data.ndim != 1:
             raise AssertionError("Data must be a scalar time series, castable as a 1d numpy array.")
@@ -31,3 +34,5 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
             raise NotImplementedError('non-cvxpy solution methods not yet implemented')
         self.basis = basis
         self.quantiles = quantiles
+        tf = time()
+        self.fit_time = tf - ti
