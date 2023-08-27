@@ -3,7 +3,7 @@ import cvxpy as cp
 from itertools import combinations
 
 
-def basis(num_harmonics, length, periods):
+def make_basis_matrix(num_harmonics, length, periods):
     Ps = np.atleast_1d(periods)
     ws = [2 * np.pi / P for P in Ps]
     i_values = np.arange(1, num_harmonics + 1)[:, np.newaxis]  # Column vector
