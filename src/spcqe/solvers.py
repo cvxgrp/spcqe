@@ -1,19 +1,50 @@
 import cvxpy as cp
 import numpy as np
-from spcqe.functions import basis, make_regularization_matrix, pinball_slopes
+from spcqe.functions import make_basis_matrix, make_regularization_matrix, pinball_slopes
+from gfosd import Problem as ProblemOSD
+from gfosd.components import Basis, SumQuantile
+from tqdm import tqdm
 
 
 def solve_cvx(data, num_harmonics, periods, weight, quantiles, eps, solver, verbose):
-    problem, basis = make_cvx_problem(data, num_harmonics, periods, weight, quantiles, eps)
-    problem.solve(solver=solver, verbose=verbose)
+    if len(quantiles) > 1:
+        problem, basis = make_cvx_problem(data, num_harmonics, periods, weight, quantiles, eps)
+    else:
+        problem,  basis = make_cvx_problem_single(data, num_harmonics, periods, weight, quantiles)
+    if solver.lower() == 'clarabel':
+        problem.solve(solver=solver, verbose=verbose, tol_gap_abs=1e-3, tol_gap_rel=1e-3, tol_feas=1e-3,
+                      tol_infeas_abs=1e-3, tol_infeas_rel=1e-3)
+    else:
+        problem.solve(solver=solver, verbose=verbose)
     theta = problem.variables()[0]
-    quantiles = basis @ theta.value
-    return quantiles, basis
+    quantile_estimates = basis @ theta.value
+    return quantile_estimates, basis
+
+
+def solve_osd(data, num_harmonics, periods, weight, quantiles, eps, solver, verbose):
+    length = len(data)
+    basis = make_basis_matrix(num_harmonics, length, periods)
+    reg = make_regularization_matrix(num_harmonics, weight, periods)
+    if len(quantiles) > 1:
+        problems = [make_osd_problem(data, num_harmonics, periods, weight, q, basis, reg) for q in quantiles]
+        quantile_estimates = np.zeros((len(data), len(quantiles)), dtype=float)
+        for ix, problem in tqdm(enumerate(problems), total=len(quantiles), ncols=80):
+            problem.decompose(verbose=verbose, rho_update="none", rho=[.5, .02], max_iter=2000, eps_abs=1e-3,
+                              eps_rel=1e-3)
+            quantile_estimates[:, ix] = problem.decomposition[1]
+        quantile_estimates = np.sort(quantile_estimates, axis=1)
+    else:
+        problem = make_osd_problem(data, num_harmonics, periods, weight, quantiles, basis, reg)
+        # problem.decompose(verbose=verbose, rho_update="none", rho=[10, .1], max_iter=5000, eps_abs=1e-3, eps_rel=1e-3)
+        problem.decompose(verbose=verbose, rho_update="none", rho=[.5, .02], max_iter=2000, eps_abs=1e-3, eps_rel=1e-3)
+        # problem.decompose(verbose=verbose, max_iter=5000, eps_abs=1e-3, eps_rel=1e-3)
+        quantile_estimates = problem.decomposition[1]
+    return quantile_estimates, basis
 
 
 def make_cvx_problem(data, num_harmonics, periods, weight, quantiles, eps):
     length = len(data)
-    B = basis(num_harmonics, length, periods)
+    B = make_basis_matrix(num_harmonics, length, periods)
     D = make_regularization_matrix(num_harmonics, weight, periods)
     num_quantiles = len(quantiles)
     a, b = pinball_slopes(quantiles)
@@ -33,3 +64,25 @@ def make_cvx_problem(data, num_harmonics, periods, weight, quantiles, eps):
     obj += regularization
     prob = cp.Problem(cp.Minimize(obj), cons)
     return prob, B
+
+
+def make_cvx_problem_single(data, num_harmonics, periods, weight, quantile):
+    length = len(data)
+    B = make_basis_matrix(num_harmonics, length, periods)
+    D = make_regularization_matrix(num_harmonics, weight, periods)
+    theta = cp.Variable(B.shape[1])
+    q_hat = B @ theta
+    pinball_loss = lambda x: cp.sum(0.5 * cp.abs(x) + (quantile[0] - 0.5) * x)
+    loss = pinball_loss(q_hat - data)
+    reg = cp.sum_squares(D @ theta)
+    prob = cp.Problem(cp.Minimize(loss + reg))
+    return prob, B
+
+
+def make_osd_problem(data, num_harmonics, periods, weight, quantile, basis_matrix, reg_matrix):
+    B = basis_matrix
+    D = reg_matrix
+    x1 = SumQuantile(tau=quantile)
+    x2 = Basis(basis=B, penalty=D)
+    prob = ProblemOSD(data, [x1, x2])
+    return prob
