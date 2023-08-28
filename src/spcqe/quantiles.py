@@ -10,7 +10,7 @@ QUANTILES = (.02, .10, .20, .30, .40, .50, .60, .70, .80, .90, .98)
 
 class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
     def __init__(self, num_harmonics, periods, quantiles=QUANTILES, weight=1, eps=0.01, standardize_data=True,
-                 solver='OSD', verbose=False):
+                 take_log=False, solver='OSD', verbose=False):
         self.num_harmonics = num_harmonics
         self.periods = periods
         self.quantiles = np.atleast_1d(np.asarray(quantiles))
@@ -18,6 +18,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         self.eps = eps
         self.solver = solver
         self.standardize_data = standardize_data
+        self.take_log = take_log
         self.verbose = verbose
         self.length = None
         self.basis = None
@@ -30,6 +31,11 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         data = np.asarray(X)
         if data.ndim != 1:
             raise AssertionError("Data must be a scalar time series, castable as a 1d numpy array.")
+        if self.take_log:
+            new_data = np.nan * np.ones_like(data)
+            msk = np.logical_and(~np.isnan(data), data >= 0)
+            new_data[msk] = np.log(data[msk] + np.nanmin(data[data > 0]) * 1e-1)
+            data = new_data
         if self.standardize_data:
             sc = StandardScaler()
             data = sc.fit_transform(data.reshape(-1,1)).ravel()
@@ -51,5 +57,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
             self.fit_quantiles = self._sc.inverse_transform(fit_quantiles)
         except ValueError:
             self.fit_quantiles = self._sc.inverse_transform(fit_quantiles.reshape(-1, 1)).ravel()
+        if self.take_log:
+            self.fit_quantiles = np.exp(self.fit_quantiles)
         tf = time()
         self.fit_time = tf - ti
