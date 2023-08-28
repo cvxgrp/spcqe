@@ -3,7 +3,7 @@ import cvxpy as cp
 from itertools import combinations
 
 
-def make_basis_matrix(num_harmonics, length, periods):
+def make_basis_matrix(num_harmonics, length, periods, max_cross_k=3):
     Ps = np.atleast_1d(periods)
     ws = [2 * np.pi / P for P in Ps]
     i_values = np.arange(1, num_harmonics + 1)[:, np.newaxis]  # Column vector
@@ -25,14 +25,14 @@ def make_basis_matrix(num_harmonics, length, periods):
     B0 = [B_PL, B_P0]
 
     # cross terms, this handles the case of no cross terms gracefully (empty list)
-    C = [cross_bases(*base_tuple) for base_tuple in combinations(B_fourier, 2)]
+    C = [cross_bases(*base_tuple, max_k=max_cross_k) for base_tuple in combinations(B_fourier, 2)]
 
     B_list = B0 + B_fourier + C
     B = np.hstack(B_list)
     return B
 
 
-def make_regularization_matrix(num_harmonics, weight, periods):
+def make_regularization_matrix(num_harmonics, weight, periods, max_cross_k=3):
     Ps = np.atleast_1d(periods)
     ls_original = [weight * (2 * np.pi) / np.sqrt(P) for P in Ps]
     # this handles the case of no cross terms gracefully (empty list)
@@ -40,10 +40,15 @@ def make_regularization_matrix(num_harmonics, weight, periods):
 
     # Create a sequence of values from 1 to K (repeated for cosine and sine)
     i_values = np.repeat(np.arange(1, num_harmonics + 1), 2)
+    if max_cross_k is not None:
+        i_values_cross = np.repeat(np.arange(1, max_cross_k + 1), 2)
 
     # Create blocks of coefficients
     blocks_original = [i_values * lx for lx in ls_original]
-    blocks_cross = [np.tile(i_values * lx, 2 * num_harmonics) for lx in ls_cross]
+    if max_cross_k is None:
+        blocks_cross = [np.tile(i_values * lx, 2 * num_harmonics) for lx in ls_cross]
+    else:
+        blocks_cross = [np.tile(i_values_cross * lx, 2 * max_cross_k) for lx in ls_cross]
 
     # Combine the blocks to form the coefficient array
     coeff_i = np.concatenate([np.zeros(2)] + blocks_original + blocks_cross)
@@ -54,10 +59,14 @@ def make_regularization_matrix(num_harmonics, weight, periods):
     return D
 
 
-def cross_bases(B_P1, B_P2):
-    # Reshape both arrays to introduce a new axis for broadcasting
-    B_P1_new = B_P1[:, :, None]
-    B_P2_new = B_P2[:, None, :]
+def cross_bases(B_P1, B_P2, max_k=None):
+    if max_k is None:
+        # Reshape both arrays to introduce a new axis for broadcasting
+        B_P1_new = B_P1[:, :, None]
+        B_P2_new = B_P2[:, None, :]
+    else:
+        B_P1_new = B_P1[:, :2*max_k, None]
+        B_P2_new = B_P2[:, None, :2*max_k]
     # Use broadcasting to compute the outer product for each row
     result = B_P1_new * B_P2_new
     # Reshape the result to the desired shape
