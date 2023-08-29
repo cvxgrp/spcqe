@@ -3,7 +3,7 @@ import cvxpy as cp
 from itertools import combinations
 
 
-def make_basis_matrix(num_harmonics, length, periods, max_cross_k=3):
+def make_basis_matrix(num_harmonics, length, periods, max_cross_k=4):
     Ps = np.atleast_1d(periods)
     ws = [2 * np.pi / P for P in Ps]
     i_values = np.arange(1, num_harmonics + 1)[:, np.newaxis]  # Column vector
@@ -32,7 +32,7 @@ def make_basis_matrix(num_harmonics, length, periods, max_cross_k=3):
     return B
 
 
-def make_regularization_matrix(num_harmonics, weight, periods, max_cross_k=3):
+def make_regularization_matrix(num_harmonics, weight, periods, max_cross_k=4):
     Ps = np.atleast_1d(periods)
     ls_original = [weight * (2 * np.pi) / np.sqrt(P) for P in Ps]
     # this handles the case of no cross terms gracefully (empty list)
