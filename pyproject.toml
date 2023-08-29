@@ -1,0 +1,21 @@
+[build-system]
+# Minimum requirements for the build system to execute.
+requires = ["setuptools", "wheel"]  # PEP 508 specifications.
+
+[project]
+name = "spcqe"
+version = "0.0.1a"
+authors = [
+    {name = "Mehmet Giray Ogut", email = "giray98@stanford.edu"},
+    {name = "Bennet Meyers", email = "bennetm@stanford.edu"}
+]
+description = "Smooth periodic consistent quantile estimation"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "BSD-2-Clause"}
+dependencies = [
+    "numpy",
+    "cvxpy",
+    "scikit-learn",
+    "tqdm"
+]
