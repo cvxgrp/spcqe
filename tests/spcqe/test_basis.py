@@ -14,3 +14,7 @@ class TestBasis(unittest.TestCase):
         basis_a = make_basis_matrix(3, 100, [11, 17])
         basis_b = basis_2(3, 100, 11, 17)
         np.testing.assert_array_equal(basis_a, basis_b)
+
+
+if __name__ == "__main__":
+    unittest.main()
