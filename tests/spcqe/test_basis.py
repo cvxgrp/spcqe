@@ -14,6 +14,11 @@ class TestBasis(unittest.TestCase):
         basis_a = make_basis_matrix(3, 100, [11, 17])
         basis_b = basis_2(3, 100, 11, 17)
         np.testing.assert_array_equal(basis_a, basis_b)
+        self.assertEqual(basis_a.shape[1], 50)
+
+    def test_multiple_harmonics(self):
+        basis = make_basis_matrix([3, 4], 100, [17, 11])
+        self.assertEqual(basis.shape[1], 64)
 
 
 if __name__ == "__main__":
