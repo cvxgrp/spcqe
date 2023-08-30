@@ -10,7 +10,7 @@ QUANTILES = (.02, .10, .20, .30, .40, .50, .60, .70, .80, .90, .98)
 
 class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
     def __init__(self, num_harmonics, periods, max_cross_k=None, quantiles=QUANTILES, weight=1, eps=0.01, standardize_data=True,
-                 take_log=False, solver='OSD', verbose=False):
+                 take_log=False, solver='OSD', verbose=False, custom_basis=None):
         self.num_harmonics = num_harmonics
         self.periods = periods
         self.max_cross_k = max_cross_k
@@ -21,6 +21,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         self.standardize_data = standardize_data
         self.take_log = take_log
         self.verbose = verbose
+        self.custom_basis = custom_basis
         self.length = None
         self.basis = None
         self.fit_quantiles = None

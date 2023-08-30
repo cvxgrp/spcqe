@@ -20,6 +20,10 @@ class TestBasis(unittest.TestCase):
         basis = make_basis_matrix([3, 4], 100, [17, 11])
         self.assertEqual(basis.shape[1], 64)
 
+    def test_multiple_harmonics_and_max_cross_k(self):
+        basis = make_basis_matrix([3, 6], 100, [17, 11], max_cross_k=4)
+        self.assertEqual(basis.shape[1], 68)
+
 
 if __name__ == "__main__":
     unittest.main()

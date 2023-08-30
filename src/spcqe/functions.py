@@ -61,9 +61,7 @@ def make_regularization_matrix(num_harmonics, weight, periods, max_cross_k=None)
     blocks_cross = [np.tile(ivc * lx, 2 * min(max_cross_k, ck[0])) for ivc, lx, ck in zip(i_values_cross, ls_cross, cross_k_list)]
 
     # Combine the blocks to form the coefficient array
-    # print([item.shape for item in [np.zeros(2)] + blocks_original + blocks_cross])
     coeff_i = np.concatenate([np.zeros(2)] + blocks_original + blocks_cross)
-    # print(coeff_i.shape)
     # Create the diagonal matrix
     D = np.diag(coeff_i)
 
