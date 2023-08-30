@@ -3,7 +3,10 @@ import cvxpy as cp
 from itertools import combinations
 
 
-def make_basis_matrix(num_harmonics, length, periods, max_cross_k=None):
+def make_basis_matrix(num_harmonics, length, periods, max_cross_k=None, custom_basis=None):
+    if not (isinstance(custom_basis, dict) or custom_basis is None):
+        raise TypeError("custom_basis should be a dictionary where the key is the index\n" +
+                        "of the period and the value is a 2d array of appropriate size")
     num_harmonics = np.atleast_1d(num_harmonics)
     Ps = np.atleast_1d(periods)
     if len(num_harmonics) == 1:
@@ -23,6 +26,9 @@ def make_basis_matrix(num_harmonics, length, periods, max_cross_k=None):
     for ix in range(len(Ps)):
         B_fourier[ix][:, ::2] = B_cos_list[ix]
         B_fourier[ix][:, 1::2] = B_sin_list[ix]
+    if custom_basis is not None:
+        for ix, val in custom_basis.items():
+            B_fourier[ix] = val
 
     # offset and linear terms
     v = np.sqrt(3)
