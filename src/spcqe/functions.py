@@ -4,16 +4,21 @@ from itertools import combinations
 
 
 def make_basis_matrix(num_harmonics, length, periods, max_cross_k=None):
+    num_harmonics = np.atleast_1d(num_harmonics)
     Ps = np.atleast_1d(periods)
+    if len(num_harmonics) == 1:
+        num_harmonics = np.tile(num_harmonics, len(Ps))
+    elif len(num_harmonics) != len(Ps):
+        raise ValueError("Please pass a single number of harmonics for all periods or a number for each period")
     ws = [2 * np.pi / P for P in Ps]
-    i_values = np.arange(1, num_harmonics + 1)[:, np.newaxis]  # Column vector
+    i_value_list = [np.arange(1, nh + 1)[:, np.newaxis] for nh in num_harmonics]  # Column vector
     t_values = np.arange(length)  # Row vector
     # Computing the cos and sin matrices for each period
-    B_cos_list = [np.cos(i_values * w * t_values).T for w in ws]
-    B_sin_list = [np.sin(i_values * w * t_values).T for w in ws]
+    B_cos_list = [np.cos(iv * w * t_values).T for w, iv in zip(ws, i_value_list)]
+    B_sin_list = [np.sin(iv * w * t_values).T for w, iv in zip(ws, i_value_list)]
 
     # Interleave the results for each period using advanced indexing
-    B_fourier = [np.empty((length, 2 * num_harmonics), dtype=float) for _ in range(len(Ps))]
+    B_fourier = [np.empty((length, 2 * nh), dtype=float) for nh in num_harmonics]
     for ix in range(len(Ps)):
         B_fourier[ix][:, ::2] = B_cos_list[ix]
         B_fourier[ix][:, 1::2] = B_sin_list[ix]
