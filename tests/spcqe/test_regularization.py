@@ -15,6 +15,14 @@ class TestRegularization(unittest.TestCase):
         reg_b = regularization_matrix_2(3, 1, 23, 11)
         np.testing.assert_array_equal(reg_a, reg_b)
 
+    def test_multiple_harmonics(self):
+        reg = make_regularization_matrix([3, 4], 100, [17, 11])
+        self.assertEqual(reg.shape[0], 64)
+
+    def test_multiple_harmonics_and_max_cross_k(self):
+        reg = make_regularization_matrix([3, 6], 100, [17, 11], max_cross_k=4)
+        self.assertEqual(reg.shape[0], 68)
+
 
 if __name__ == "__main__":
     unittest.main()

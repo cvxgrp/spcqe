@@ -10,6 +10,7 @@ def make_basis_matrix(num_harmonics, length, periods, max_cross_k=None):
         num_harmonics = np.tile(num_harmonics, len(Ps))
     elif len(num_harmonics) != len(Ps):
         raise ValueError("Please pass a single number of harmonics for all periods or a number for each period")
+
     ws = [2 * np.pi / P for P in Ps]
     i_value_list = [np.arange(1, nh + 1)[:, np.newaxis] for nh in num_harmonics]  # Column vector
     t_values = np.arange(length)  # Row vector
@@ -38,26 +39,31 @@ def make_basis_matrix(num_harmonics, length, periods, max_cross_k=None):
 
 
 def make_regularization_matrix(num_harmonics, weight, periods, max_cross_k=None):
+    num_harmonics = np.atleast_1d(num_harmonics)
     Ps = np.atleast_1d(periods)
+    if len(num_harmonics) == 1:
+        num_harmonics = np.tile(num_harmonics, len(Ps))
+    elif len(num_harmonics) != len(Ps):
+        raise ValueError("Please pass a single number of harmonics for all periods or a number for each period")
     ls_original = [weight * (2 * np.pi) / np.sqrt(P) for P in Ps]
     # this handles the case of no cross terms gracefully (empty list)
     ls_cross = [weight * (2 * np.pi) / np.sqrt(min(*c)) for c in combinations(Ps, 2)]
+    cross_k_list = [c for c in combinations(num_harmonics, 2)]
 
     # Create a sequence of values from 1 to K (repeated for cosine and sine)
-    i_values = np.repeat(np.arange(1, num_harmonics + 1), 2)
-    if max_cross_k is not None:
-        i_values_cross = np.repeat(np.arange(1, max_cross_k + 1), 2)
+    i_value_list = [np.repeat(np.arange(1, nh + 1), 2) for nh in num_harmonics]
+    if max_cross_k is None:
+        max_cross_k = np.inf
+    i_values_cross = [np.repeat(np.arange(1, min(max_cross_k, ck[1]) + 1), 2) for ck in cross_k_list]
 
     # Create blocks of coefficients
-    blocks_original = [i_values * lx for lx in ls_original]
-    if max_cross_k is None:
-        blocks_cross = [np.tile(i_values * lx, 2 * num_harmonics) for lx in ls_cross]
-    else:
-        blocks_cross = [np.tile(i_values_cross * lx, 2 * max_cross_k) for lx in ls_cross]
+    blocks_original = [iv * lx for iv,lx in zip(i_value_list, ls_original)]
+    blocks_cross = [np.tile(ivc * lx, 2 * min(max_cross_k, ck[0])) for ivc, lx, ck in zip(i_values_cross, ls_cross, cross_k_list)]
 
     # Combine the blocks to form the coefficient array
+    # print([item.shape for item in [np.zeros(2)] + blocks_original + blocks_cross])
     coeff_i = np.concatenate([np.zeros(2)] + blocks_original + blocks_cross)
-
+    # print(coeff_i.shape)
     # Create the diagonal matrix
     D = np.diag(coeff_i)
 
