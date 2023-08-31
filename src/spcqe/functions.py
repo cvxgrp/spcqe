@@ -6,7 +6,7 @@ from itertools import combinations
 def make_basis_matrix(num_harmonics, length, periods, max_cross_k=None, custom_basis=None):
     if not (isinstance(custom_basis, dict) or custom_basis is None):
         raise TypeError("custom_basis should be a dictionary where the key is the index\n" +
-                        "of the period and the value is a 2d array of appropriate size")
+                        "of the period and the value is list containing the basis and the weights")
     num_harmonics = np.atleast_1d(num_harmonics)
     Ps = np.atleast_1d(periods)
     if len(num_harmonics) == 1:
@@ -28,7 +28,7 @@ def make_basis_matrix(num_harmonics, length, periods, max_cross_k=None, custom_b
         B_fourier[ix][:, 1::2] = B_sin_list[ix]
     if custom_basis is not None:
         for ix, val in custom_basis.items():
-            B_fourier[ix] = val
+            B_fourier[ix] = val[0]
 
     # offset and linear terms
     v = np.sqrt(3)
@@ -52,20 +52,20 @@ def make_regularization_matrix(num_harmonics, weight, periods, max_cross_k=None,
     elif len(num_harmonics) != len(Ps):
         raise ValueError("Please pass a single number of harmonics for all periods or a number for each period")
     ls_original = [weight * (2 * np.pi) / np.sqrt(P) for P in Ps]
-    # this handles the case of no cross terms gracefully (empty list)
-    ls_cross = [weight * (2 * np.pi) / np.sqrt(min(*c)) for c in combinations(Ps, 2)]
-    cross_k_list = [c for c in combinations(num_harmonics, 2)]
-
     # Create a sequence of values from 1 to K (repeated for cosine and sine)
     i_value_list = [np.repeat(np.arange(1, nh + 1), 2) for nh in num_harmonics]
-    if max_cross_k is None:
-        max_cross_k = np.inf
-    i_values_cross = [np.repeat(np.arange(1, min(max_cross_k, ck[1]) + 1), 2) for ck in cross_k_list]
 
     # Create blocks of coefficients
     blocks_original = [iv * lx for iv, lx in zip(i_value_list, ls_original)]
-    blocks_cross = [np.tile(ivc * lx, 2 * min(max_cross_k, ck[0])) for ivc, lx, ck in
-                    zip(i_values_cross, ls_cross, cross_k_list)]
+    if custom_basis is not None:
+        for ix, val in custom_basis.items():
+            blocks_original[ix] = val[0]
+    if max_cross_k is not None:
+        max_cross_k *= 2
+    blocks_cross = [[l2 for l1 in c[0][:max_cross_k] for l2 in c[1][:max_cross_k]] for c in combinations(blocks_original, 2)]
+    # TODO: determine if this logic should be changed to the following:
+    # blocks_cross = [[max(l1, l2) for l1 in c[0][:max_cross_k] for l2 in c[1][:max_cross_k]] for c in
+    #                 combinations(blocks_original, 2)]
 
     # Combine the blocks to form the coefficient array
     coeff_i = np.concatenate([np.zeros(2)] + blocks_original + blocks_cross)
