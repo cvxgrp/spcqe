@@ -8,12 +8,12 @@ class TestRegularization(unittest.TestCase):
     def test_reg_3(self):
         reg_a = make_regularization_matrix(3, 1, [23, 17, 11])
         reg_b = regularization_matrix_3(3, 1, 23, 17, 11)
-        np.testing.assert_array_equal(reg_a, reg_b)
+        np.testing.assert_array_equal(reg_a.data.ravel(), np.diag(reg_b))
 
     def test_reg_2(self):
         reg_a = make_regularization_matrix(3, 1, [23, 11])
         reg_b = regularization_matrix_2(3, 1, 23, 11)
-        np.testing.assert_array_equal(reg_a, reg_b)
+        np.testing.assert_array_equal(reg_a.data.ravel(), np.diag(reg_b))
 
     def test_multiple_harmonics(self):
         reg = make_regularization_matrix([3, 4], 100, [17, 11])
