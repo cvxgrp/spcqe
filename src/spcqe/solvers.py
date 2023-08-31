@@ -66,10 +66,10 @@ def make_cvx_problem(data, num_harmonics, periods, max_cross_k, weight, quantile
     return prob, B
 
 
-def make_cvx_problem_single(data, num_harmonics, periods, weight, quantile):
+def make_cvx_problem_single(data, num_harmonics, periods, max_cross_k, weight, quantile):
     length = len(data)
-    B = make_basis_matrix(num_harmonics, length, periods)
-    D = make_regularization_matrix(num_harmonics, weight, periods)
+    B = make_basis_matrix(num_harmonics, length, periods, max_cross_k=max_cross_k)
+    D = make_regularization_matrix(num_harmonics, weight, periods, max_cross_k=max_cross_k)
     theta = cp.Variable(B.shape[1])
     q_hat = B @ theta
     pinball_loss = lambda x: cp.sum(0.5 * cp.abs(x) + (quantile[0] - 0.5) * x)
