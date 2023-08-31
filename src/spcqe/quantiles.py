@@ -48,10 +48,12 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         self.length = len(data)
         if self.solver.lower() in ['mosek', 'osqp', 'scs', 'ecos', 'clarabel']:
             fit_quantiles, basis = solve_cvx(data, self.num_harmonics, self.periods, self.max_cross_k, self.weight,
-                                             self.quantiles, self.eps, solver=self.solver.upper(), verbose=self.verbose)
+                                             self.quantiles, self.eps, self.solver.upper(), self.verbose,
+                                             self.custom_basis)
         elif self.solver.lower() in ['sig-decomp', 'osd', 'qss']:
             fit_quantiles, basis = solve_osd(data, self.num_harmonics, self.periods, self.max_cross_k, self.weight,
-                                             self.quantiles, self.eps, solver=self.solver.upper(), verbose=self.verbose)
+                                             self.quantiles, self.eps, self.solver.upper(), self.verbose,
+                                             self.custom_basis)
         else:
             raise NotImplementedError('non-cvxpy solution methods not yet implemented')
         self.basis = basis
