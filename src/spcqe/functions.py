@@ -9,11 +9,14 @@ def make_basis_matrix(num_harmonics, length, periods, max_cross_k=None, custom_b
                         "of the period and the value is list containing the basis and the weights")
     num_harmonics = np.atleast_1d(num_harmonics)
     Ps = np.atleast_1d(periods)
+    sort_idx = np.argsort(-Ps)
+    Ps = -np.sort(-Ps)
     if len(num_harmonics) == 1:
         num_harmonics = np.tile(num_harmonics, len(Ps))
     elif len(num_harmonics) != len(Ps):
         raise ValueError("Please pass a single number of harmonics for all periods or a number for each period")
-
+    # ensure if user  has passed a list of harmonics, matching a list of periods, that we reorder that as well
+    num_harmonics = num_harmonics[sort_idx]
     ws = [2 * np.pi / P for P in Ps]
     i_value_list = [np.arange(1, nh + 1)[:, np.newaxis] for nh in num_harmonics]  # Column vector
     t_values = np.arange(length)  # Row vector
@@ -47,10 +50,13 @@ def make_basis_matrix(num_harmonics, length, periods, max_cross_k=None, custom_b
 def make_regularization_matrix(num_harmonics, weight, periods, max_cross_k=None, custom_basis=None):
     num_harmonics = np.atleast_1d(num_harmonics)
     Ps = np.atleast_1d(periods)
+    sort_idx = np.argsort(-Ps)
+    Ps = -np.sort(-Ps)
     if len(num_harmonics) == 1:
         num_harmonics = np.tile(num_harmonics, len(Ps))
     elif len(num_harmonics) != len(Ps):
         raise ValueError("Please pass a single number of harmonics for all periods or a number for each period")
+    num_harmonics = num_harmonics[sort_idx]
     ls_original = [weight * (2 * np.pi) / np.sqrt(P) for P in Ps]
     # Create a sequence of values from 1 to K (repeated for cosine and sine)
     i_value_list = [np.repeat(np.arange(1, nh + 1), 2) for nh in num_harmonics]
@@ -62,8 +68,11 @@ def make_regularization_matrix(num_harmonics, weight, periods, max_cross_k=None,
             blocks_original[ix] = val[0]
     if max_cross_k is not None:
         max_cross_k *= 2
-    blocks_cross = [[l2 for l1 in c[0][:max_cross_k] for l2 in c[1][:max_cross_k]] for c in combinations(blocks_original, 2)]
-    # TODO: determine if this logic should be changed to the following:
+    # this assumes  that the list of periods is ordered,  which is ensured in ln 51.  Ln 12 makes sure the bases are
+    # in the same order
+    blocks_cross = [[l2 for l1 in c[0][:max_cross_k] for l2 in c[1][:max_cross_k]]
+                    for c in combinations(blocks_original, 2)]
+    # This is *not* correct, as confirmed  with Stephen and Mehmet 8/31/23:
     # blocks_cross = [[max(l1, l2) for l1 in c[0][:max_cross_k] for l2 in c[1][:max_cross_k]] for c in
     #                 combinations(blocks_original, 2)]
 
