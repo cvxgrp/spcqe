@@ -1,5 +1,5 @@
 import numpy as np
-import cvxpy as cp
+from scipy.sparse import spdiags
 from itertools import combinations
 
 
@@ -63,13 +63,14 @@ def make_regularization_matrix(num_harmonics, weight, periods, max_cross_k=None)
     i_values_cross = [np.repeat(np.arange(1, min(max_cross_k, ck[1]) + 1), 2) for ck in cross_k_list]
 
     # Create blocks of coefficients
-    blocks_original = [iv * lx for iv,lx in zip(i_value_list, ls_original)]
-    blocks_cross = [np.tile(ivc * lx, 2 * min(max_cross_k, ck[0])) for ivc, lx, ck in zip(i_values_cross, ls_cross, cross_k_list)]
+    blocks_original = [iv * lx for iv, lx in zip(i_value_list, ls_original)]
+    blocks_cross = [np.tile(ivc * lx, 2 * min(max_cross_k, ck[0])) for ivc, lx, ck in
+                    zip(i_values_cross, ls_cross, cross_k_list)]
 
     # Combine the blocks to form the coefficient array
     coeff_i = np.concatenate([np.zeros(2)] + blocks_original + blocks_cross)
     # Create the diagonal matrix
-    D = np.diag(coeff_i)
+    D = spdiags(coeff_i, 0, coeff_i.size, coeff_i.size)
 
     return D
 
