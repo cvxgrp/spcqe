@@ -44,7 +44,7 @@ def make_basis_matrix(num_harmonics, length, periods, max_cross_k=None, custom_b
     return B
 
 
-def make_regularization_matrix(num_harmonics, weight, periods, max_cross_k=None):
+def make_regularization_matrix(num_harmonics, weight, periods, max_cross_k=None, custom_basis=None):
     num_harmonics = np.atleast_1d(num_harmonics)
     Ps = np.atleast_1d(periods)
     if len(num_harmonics) == 1:

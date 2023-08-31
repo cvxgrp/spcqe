@@ -6,11 +6,13 @@ from gfosd.components import Basis, SumQuantile
 from tqdm import tqdm
 
 
-def solve_cvx(data, num_harmonics, periods, max_cross_k, weight, quantiles, eps, solver, verbose):
+def solve_cvx(data, num_harmonics, periods, max_cross_k, weight, quantiles, eps, solver, verbose, custom_basis):
     if len(quantiles) > 1:
-        problem, basis = make_cvx_problem(data, num_harmonics, periods, max_cross_k, weight, quantiles, eps)
+        problem, basis = make_cvx_problem(data, num_harmonics, periods, max_cross_k, weight, quantiles, eps,
+                                          custom_basis)
     else:
-        problem,  basis = make_cvx_problem_single(data, num_harmonics, periods, max_cross_k, weight, quantiles)
+        problem,  basis = make_cvx_problem_single(data, num_harmonics, periods, max_cross_k, weight, quantiles,
+                                                  custom_basis)
     if solver.lower() == 'clarabel':
         problem.solve(solver=solver, verbose=verbose, tol_gap_abs=1e-3, tol_gap_rel=1e-3, tol_feas=1e-3,
                       tol_infeas_abs=1e-3, tol_infeas_rel=1e-3)
@@ -21,10 +23,10 @@ def solve_cvx(data, num_harmonics, periods, max_cross_k, weight, quantiles, eps,
     return quantile_estimates, basis
 
 
-def solve_osd(data, num_harmonics, periods, max_cross_k, weight, quantiles, eps, solver, verbose):
+def solve_osd(data, num_harmonics, periods, max_cross_k, weight, quantiles, eps, solver, verbose, custom_basis):
     length = len(data)
-    basis = make_basis_matrix(num_harmonics, length, periods, max_cross_k=max_cross_k)
-    reg = make_regularization_matrix(num_harmonics, weight, periods, max_cross_k=max_cross_k)
+    basis = make_basis_matrix(num_harmonics, length, periods, max_cross_k=max_cross_k, custom_basis=custom_basis)
+    reg = make_regularization_matrix(num_harmonics, weight, periods, max_cross_k=max_cross_k, custom_basis=custom_basis)
     if len(quantiles) > 1:
         problems = [make_osd_problem(data, num_harmonics, periods, weight, q, basis, reg) for q in quantiles]
         quantile_estimates = np.zeros((len(data), len(quantiles)), dtype=float)
@@ -44,8 +46,8 @@ def solve_osd(data, num_harmonics, periods, max_cross_k, weight, quantiles, eps,
 
 def make_cvx_problem(data, num_harmonics, periods, max_cross_k, weight, quantiles, eps):
     length = len(data)
-    B = make_basis_matrix(num_harmonics, length, periods, max_cross_k=max_cross_k)
-    D = make_regularization_matrix(num_harmonics, weight, periods, max_cross_k=max_cross_k)
+    B = make_basis_matrix(num_harmonics, length, periods, max_cross_k=max_cross_k, custom_basis=custom_basis)
+    D = make_regularization_matrix(num_harmonics, weight, periods, max_cross_k=max_cross_k, custom_basis=custom_basis)
     num_quantiles = len(quantiles)
     a, b = pinball_slopes(quantiles)
     Theta = cp.Variable((B.shape[1], num_quantiles))
