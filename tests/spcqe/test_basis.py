@@ -17,7 +17,7 @@ class TestBasis(unittest.TestCase):
         self.assertEqual(basis_a.shape[1], 50)
 
     def test_multiple_harmonics(self):
-        basis = make_basis_matrix([3, 4], 100, [17, 11])
+        basis = make_basis_matrix([3, 4], 100, [11, 17])
         self.assertEqual(basis.shape[1], 64)
 
     def test_multiple_harmonics_and_max_cross_k(self):
