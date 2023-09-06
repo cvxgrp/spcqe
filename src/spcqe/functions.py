@@ -31,9 +31,16 @@ def make_basis_matrix(num_harmonics, length, periods, max_cross_k=None, custom_b
         B_fourier[ix][:, 1::2] = B_sin_list[ix]
     if custom_basis is not None:
         for ix, val in custom_basis.items():
+            # check length
+            if val.shape[0] != length:
+                # extend to cover future time period if necessary
+                multiplier = max(1, val.shape[0] // length + 1)
+                new_val = np.tile(val, (multiplier, 1))[:length]
+            else:
+                new_val = val[:length]
             # also reorder index of custom basis, if necessary
             ixt = np.where(sort_idx == ix)[0][0]
-            B_fourier[ixt] = val
+            B_fourier[ixt] = new_val
 
     # offset and linear terms
     v = np.sqrt(3)
