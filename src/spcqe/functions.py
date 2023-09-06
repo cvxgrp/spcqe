@@ -15,7 +15,7 @@ def make_basis_matrix(num_harmonics, length, periods, max_cross_k=None, custom_b
         num_harmonics = np.tile(num_harmonics, len(Ps))
     elif len(num_harmonics) != len(Ps):
         raise ValueError("Please pass a single number of harmonics for all periods or a number for each period")
-    # ensure if user  has passed a list of harmonics, matching a list of periods, that we reorder that as well
+    # ensure if user has passed a list of harmonics, matching a list of periods, that we reorder that as well
     num_harmonics = num_harmonics[sort_idx]
     ws = [2 * np.pi / P for P in Ps]
     i_value_list = [np.arange(1, nh + 1)[:, np.newaxis] for nh in num_harmonics]  # Column vector
@@ -31,7 +31,9 @@ def make_basis_matrix(num_harmonics, length, periods, max_cross_k=None, custom_b
         B_fourier[ix][:, 1::2] = B_sin_list[ix]
     if custom_basis is not None:
         for ix, val in custom_basis.items():
-            B_fourier[ix] = val[0]
+            # also reorder index of custom basis, if necessary
+            ixt = np.where(sort_idx == ix)[0][0]
+            B_fourier[ixt] = val
 
     # offset and linear terms
     v = np.sqrt(3)
@@ -65,7 +67,8 @@ def make_regularization_matrix(num_harmonics, weight, periods, max_cross_k=None,
     blocks_original = [iv * lx for iv, lx in zip(i_value_list, ls_original)]
     if custom_basis is not None:
         for ix, val in custom_basis.items():
-            blocks_original[ix] = val[0]
+            ixt = np.where(sort_idx == ix)[0][0]
+            blocks_original[ixt] = ls_original[ixt] * np.arange(1, val.shape[1] + 1)
     if max_cross_k is not None:
         max_cross_k *= 2
     # this assumes  that the list of periods is ordered,  which is ensured in ln 51.  Ln 12 makes sure the bases are
