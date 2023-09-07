@@ -83,6 +83,13 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         return newq
 
     def transform(self, X, y=None):
+        # Currently this function calculates the transforms on the fly each time the method is called. This is not
+        # unreasonable, as fitting the quantile basis parameters (with convex optimization) is the truly time intensive
+        # part. However, this function could be further optimized with memoization---if we are asked to transform data
+        # during a time period we've seen before, we could look that up rather than recalculating the linear
+        # coefficients for the transform. That said, this function only takes a handful of microseconds to execute on
+        # >300,000 data points, and it is O(T), that is, linear computational complexity with respect to the size of the
+        # time axis. So, this further optimization is probably not a huge priority.
         data = np.asarray(X)
         if len(data) != self.length and y is None:
             raise ValueError("If not transforming the original fit data set, a time index must be passed as y")
@@ -106,9 +113,11 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         # This works but has a loop over the time index which is >> than the number of quantiles
         # for ix in range(new_quantiles.shape[0]):
         #     mats[ix] = self.x_expand(new_quantiles[ix], ix)
+        # the LHS of each matrix equation is the same and does not change over time
         yy = stats.norm.ppf(self.quantiles)[np.newaxis, :]
+        # solve vectorized matrix equations, T independent (q x q) set of equations
         parameters = np.linalg.solve(mats, yy)
-        # apply the transform to the new data
+        # apply the transform to the new data: this makes the PWL basis expansion for the new data (T x q)
         mats = np.empty((new_quantiles.shape[0], len(self.quantiles)))
         for jx in range(len(self.quantiles)):
             if jx == 0:
@@ -117,7 +126,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
                 mats[:, jx] = data
             else:
                 mats[:, jx] = np.clip(data - new_quantiles[:, jx - 1], 0, np.inf)
-        # print(mats.shape, parameters.shape)
+        # Finally, apply all the transforms, one for each time index, i
         Z = np.einsum('ij, ij -> i', mats, parameters)
         return Z
 
@@ -131,7 +140,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         else:
             new_quantiles = self.fit_quantiles
         # fit piecewise linear transforms, one for each time index
-        # start by making a piecewise linear basis matrix with known knot points for each time index: T x q x q
+        # make the piecewise linear basis matrix with known knot points, for the inverse this is static in time: (q x q)
         mats = np.empty((len(self.quantiles), len(self.quantiles)))
         for jx in range(len(self.quantiles)):
             if jx == 0:
@@ -142,10 +151,12 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
                 mats[:, jx] = np.clip(
                     stats.norm.ppf(self.quantiles) - stats.norm.ppf(self.quantiles)[jx - 1],
                     0, np.inf)
+        # add a new axis for vectorized numpy matrix solve
         mats = mats[np.newaxis, :, :]
+        # in the inverse, there is now a different LHS for each matrix equation
         yy = new_quantiles
         parameters = np.linalg.solve(mats, yy) # shape len(data) x len(quantiles)
-        # apply the transform to the new data
+        # apply the transform to the new data (T x q)
         mats = np.empty((new_quantiles.shape[0], len(self.quantiles)))
         for jx in range(len(self.quantiles)):
             if jx == 0:
