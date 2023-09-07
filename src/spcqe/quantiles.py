@@ -3,6 +3,7 @@ from time import time
 from sklearn.base import TransformerMixin, BaseEstimator
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import FunctionTransformer
+import scipy.stats as stats
 from spcqe.solvers import solve_cvx, solve_osd
 from spcqe.functions import make_basis_matrix
 
@@ -70,22 +71,6 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         # refit basis weights after undoing any preprocessing
         self.fit_parameters, _, _, _ = np.linalg.lstsq(self.basis, self.fit_quantiles, rcond=None)
         self.length = len(data)
-        mats = np.empty((self.length, len(self.quantiles), len(self.quantiles)))
-        for jx in range(len(self.quantiles)):
-            if jx == 0:
-                mats[:, :, jx] = 1
-            elif jx == 1:
-                mats[:, :, jx] = self.fit_quantiles
-            else:
-                mats[:, :, jx] = np.clip(
-                    self.fit_quantiles - np.tile(self.fit_quantiles[:, jx - 1], (self.fit_quantiles.shape[1], 1)).T,
-                    0, np.inf)
-        # This works but has a loop over the time index which is >> than the number of quantiles
-        # for ix in range(spq.fit_quantiles.shape[0]):
-        #     mats[ix] = self.x_expand(self.fit_quantiles[ix], ix)
-        yy = self.quantiles[np.newaxis, :]
-        parameters = np.linalg.solve(mats, yy)
-        self.transform_parameters = parameters
         tf = time()
         self.fit_time = tf - ti
 
@@ -97,17 +82,42 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         newq = np.sort(newq, axis=1)
         return newq
 
-
     def transform(self, X, y=None):
-        mats = np.empty((self.length, len(self.quantiles)))
+        data = np.asarray(X)
+        if len(data) != self.length and y is None:
+            raise ValueError("If not transforming the original fit data set, a time index must be passed as y")
+        # get correct basis matrix and quantile estimates for time period of prediction
+        if y is not None:
+            new_quantiles = self.predict(y)
+        else:
+            new_quantiles = self.fit_quantiles
+        # fit piecewise linear transforms, one for each time index
+        # start by making a piecewise linear basis matrix with known knot points for each time index: T x q x q
+        mats = np.empty((new_quantiles.shape[0], len(self.quantiles), len(self.quantiles)))
+        for jx in range(len(self.quantiles)):
+            if jx == 0:
+                mats[:, :, jx] = 1
+            elif jx == 1:
+                mats[:, :, jx] = new_quantiles
+            else:
+                mats[:, :, jx] = np.clip(
+                    new_quantiles - np.tile(new_quantiles[:, jx - 1], (new_quantiles.shape[1], 1)).T,
+                    0, np.inf)
+        # This works but has a loop over the time index which is >> than the number of quantiles
+        # for ix in range(new_quantiles.shape[0]):
+        #     mats[ix] = self.x_expand(new_quantiles[ix], ix)
+        yy = stats.norm.ppf(self.quantiles)[np.newaxis, :]
+        parameters = np.linalg.solve(mats, yy)
+        # apply the transform to the new data
+        mats = np.empty((new_quantiles.shape[0], len(self.quantiles)))
         for jx in range(len(self.quantiles)):
             if jx == 0:
                 mats[:, jx] = 1
             elif jx == 1:
-                mats[:, jx] = X
+                mats[:, jx] = data
             else:
-                mats[:, jx] = np.clip(X - self.fit_quantiles[:, jx - 1], 0, np.inf)
-        # Z = mats @
+                mats[:, jx] = np.clip(data - new_quantiles[:, jx - 1], 0, np.inf)
+        Z = np.einsum('ij, ij -> i', mats, parameters)
         return Z
 
     def x_expand(self, xi, tix):
