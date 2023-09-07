@@ -117,9 +117,45 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
                 mats[:, jx] = data
             else:
                 mats[:, jx] = np.clip(data - new_quantiles[:, jx - 1], 0, np.inf)
+        # print(mats.shape, parameters.shape)
         Z = np.einsum('ij, ij -> i', mats, parameters)
         return Z
 
+    def inverse_transform(self, X, y=None):
+        data = np.asarray(X)
+        if len(data) != self.length and y is None:
+            raise ValueError("If not transforming the original fit data set, a time index must be passed as y")
+        # get correct basis matrix and quantile estimates for time period of prediction
+        if y is not None:
+            new_quantiles = self.predict(y)
+        else:
+            new_quantiles = self.fit_quantiles
+        # fit piecewise linear transforms, one for each time index
+        # start by making a piecewise linear basis matrix with known knot points for each time index: T x q x q
+        mats = np.empty((len(self.quantiles), len(self.quantiles)))
+        for jx in range(len(self.quantiles)):
+            if jx == 0:
+                mats[:, jx] = 1
+            elif jx == 1:
+                mats[:, jx] = stats.norm.ppf(self.quantiles)
+            else:
+                mats[:, jx] = np.clip(
+                    stats.norm.ppf(self.quantiles) - stats.norm.ppf(self.quantiles)[jx - 1],
+                    0, np.inf)
+        mats = mats[np.newaxis, :, :]
+        yy = new_quantiles
+        parameters = np.linalg.solve(mats, yy) # shape len(data) x len(quantiles)
+        # apply the transform to the new data
+        mats = np.empty((new_quantiles.shape[0], len(self.quantiles)))
+        for jx in range(len(self.quantiles)):
+            if jx == 0:
+                mats[:, jx] = 1
+            elif jx == 1:
+                mats[:, jx] = data
+            else:
+                mats[:, jx] = np.clip(data - stats.norm.ppf(self.quantiles)[jx - 1], 0, np.inf)
+        Z = np.einsum('ij, ij -> i', mats, parameters)
+        return Z
     def x_expand(self, xi, tix):
         xin = np.atleast_1d(xi)
         h1 = np.ones_like(xin)
