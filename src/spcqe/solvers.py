@@ -31,14 +31,18 @@ def solve_osd(data, num_harmonics, periods, max_cross_k, weight, quantiles, eps,
         problems = [make_osd_problem(data, num_harmonics, periods, weight, q, basis, reg) for q in quantiles]
         quantile_estimates = np.zeros((len(data), len(quantiles)), dtype=float)
         for ix, problem in tqdm(enumerate(problems), total=len(quantiles), ncols=80):
-            problem.decompose(verbose=verbose, rho_update="none", rho=[.5, .02], max_iter=2000, eps_abs=1e-3,
-                              eps_rel=1e-3)
+            if np.abs(quantiles[ix] - 0.5) > 0.4:
+                osd_abs = 1e-4
+            else:
+                osd_abs = 1e-3
+            problem.decompose(verbose=verbose, rho_update="none", rho=[.5, .02], max_iter=5000, eps_abs=osd_abs,
+                              eps_rel=osd_abs)
             quantile_estimates[:, ix] = problem.decomposition[1]
         quantile_estimates = np.sort(quantile_estimates, axis=1)
     else:
         problem = make_osd_problem(data, num_harmonics, periods, weight, quantiles, basis, reg)
         # problem.decompose(verbose=verbose, rho_update="none", rho=[10, .1], max_iter=5000, eps_abs=1e-3, eps_rel=1e-3)
-        problem.decompose(verbose=verbose, rho_update="none", rho=[.5, .02], max_iter=2000, eps_abs=1e-3, eps_rel=1e-3)
+        problem.decompose(verbose=verbose, rho_update="none", rho=[.5, .02], max_iter=5000, eps_abs=1e-3, eps_rel=1e-3)
         # problem.decompose(verbose=verbose, max_iter=5000, eps_abs=1e-3, eps_rel=1e-3)
         quantile_estimates = problem.decomposition[1]
     return quantile_estimates, basis
