@@ -3,7 +3,7 @@ from scipy.sparse import spdiags
 from itertools import combinations
 
 
-def make_basis_matrix(num_harmonics, length, periods, max_cross_k=None, custom_basis=None):
+def make_basis_matrix(num_harmonics, length, periods, trend=False, max_cross_k=None, custom_basis=None):
     if not (isinstance(custom_basis, dict) or custom_basis is None):
         raise TypeError("custom_basis should be a dictionary where the key is the index\n" +
                         "of the period and the value is list containing the basis and the weights")
@@ -43,10 +43,14 @@ def make_basis_matrix(num_harmonics, length, periods, max_cross_k=None, custom_b
             B_fourier[ixt] = new_val
 
     # offset and linear terms
-    v = np.sqrt(3)
-    B_PL = np.linspace(-v, v, length).reshape(-1, 1)
-    B_P0 = np.ones((length, 1))
-    B0 = [B_PL, B_P0]
+    if trend is False:
+        B_P0 = np.ones((length, 1))
+        B0 = [B_P0]
+    else:
+        v = np.sqrt(3)
+        B_PL = np.linspace(-v, v, length).reshape(-1, 1)
+        B_P0 = np.ones((length, 1))
+        B0 = [B_PL, B_P0]
 
     # cross terms, this handles the case of no cross terms gracefully (empty list)
     C = [cross_bases(*base_tuple, max_k=max_cross_k) for base_tuple in combinations(B_fourier, 2)]
@@ -56,7 +60,7 @@ def make_basis_matrix(num_harmonics, length, periods, max_cross_k=None, custom_b
     return B
 
 
-def make_regularization_matrix(num_harmonics, weight, periods, max_cross_k=None, custom_basis=None):
+def make_regularization_matrix(num_harmonics, weight, periods, trend=False, max_cross_k=None, custom_basis=None):
     num_harmonics = np.atleast_1d(num_harmonics)
     Ps = np.atleast_1d(periods)
     sort_idx = np.argsort(-Ps)
@@ -87,7 +91,11 @@ def make_regularization_matrix(num_harmonics, weight, periods, max_cross_k=None,
     #                 combinations(blocks_original, 2)]
 
     # Combine the blocks to form the coefficient array
-    coeff_i = np.concatenate([np.zeros(2)] + blocks_original + blocks_cross)
+    if trend is False:
+        first_block = [np.zeros(1)]
+    else:
+        first_block = [np.zeros(2)]
+    coeff_i = np.concatenate(first_block + blocks_original + blocks_cross)
     # Create the diagonal matrix
     D = spdiags(coeff_i, 0, coeff_i.size, coeff_i.size)
 
