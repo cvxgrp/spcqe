@@ -11,11 +11,12 @@ QUANTILES = (.02, .10, .20, .30, .40, .50, .60, .70, .80, .90, .98)
 
 
 class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
-    def __init__(self, num_harmonics, periods, max_cross_k=None, quantiles=QUANTILES, weight=1, eps=0.01,
+    def __init__(self, num_harmonics, periods, trend=False, max_cross_k=None, quantiles=QUANTILES, weight=1, eps=0.01,
                  standardize_data=True,
                  take_log=False, solver='OSD', verbose=False, custom_basis=None):
         self.num_harmonics = num_harmonics
         self.periods = periods
+        self.trend = trend
         self.max_cross_k = max_cross_k
         self.quantiles = np.atleast_1d(np.asarray(quantiles))
         self.weight = weight
@@ -52,12 +53,12 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
             self._sc = FunctionTransformer(lambda x: x)
 
         if self.solver.lower() in ['mosek', 'osqp', 'scs', 'ecos', 'clarabel']:
-            fit_quantiles, basis = solve_cvx(data, self.num_harmonics, self.periods, self.max_cross_k, self.weight,
-                                             self.quantiles, self.eps, self.solver.upper(), self.verbose,
+            fit_quantiles, basis = solve_cvx(data, self.num_harmonics, self.periods, self.trend, self.max_cross_k,
+                                             self.weight, self.quantiles, self.eps, self.solver.upper(), self.verbose,
                                              self.custom_basis)
         elif self.solver.lower() in ['sig-decomp', 'osd', 'qss']:
-            fit_quantiles, basis = solve_osd(data, self.num_harmonics, self.periods, self.max_cross_k, self.weight,
-                                             self.quantiles, self.eps, self.solver.upper(), self.verbose,
+            fit_quantiles, basis = solve_osd(data, self.num_harmonics, self.periods, self.trend, self.max_cross_k,
+                                             self.weight, self.quantiles, self.eps, self.solver.upper(), self.verbose,
                                              self.custom_basis)
         else:
             raise NotImplementedError('non-cvxpy solution methods not yet implemented')
@@ -174,6 +175,21 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         h3up = [np.clip(xin - kn, 0, np.inf) for kn in self.fit_quantiles[tix][1:-1]]
         basis = np.r_[[h1, h2] + h3up].T
         return basis
+
+    def score(self, X, y=None):
+        data = np.asarray(X)
+        if len(data) != self.length and y is None:
+            raise ValueError("If not transforming the original fit data set, a time index must be passed as y")
+        # get correct basis matrix and quantile estimates for time period of prediction
+        if y is not None:
+            new_quantiles = self.predict(y)
+        else:
+            new_quantiles = self.fit_quantiles
+        data = data[:, np.newaxis]
+        q = self.quantiles[np.newaxis, :]
+        score = np.sum(np.trapz(0.5 * np.abs(data - new_quantiles) + (q - 0.5) * (data - new_quantiles),
+                                x=self.quantiles))
+        return score
 
     def extend_basis(self, t):
         T = self.basis.shape[0]
