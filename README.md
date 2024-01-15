@@ -36,3 +36,6 @@ spq.fit(y1)
 
 Many examples Jupyter notebooks are available in the `notebooks` folder.
 
+## Acknowledgement 
+
+This material is based upon work supported by the U.S. Department of Energy's Office of Energy Efficiency and Renewable Energy (EERE) under the Solar Energy Technologies Office Award Number 38529, "PVInsight".
