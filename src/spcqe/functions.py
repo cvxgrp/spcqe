@@ -79,18 +79,37 @@ def make_basis_matrix(num_harmonics, length, periods, standing_wave=False, trend
 
 # TODO: is it different if standing wave is True?
 def make_regularization_matrix(num_harmonics, weight, periods, standing_wave=False, trend=False, max_cross_k=None, custom_basis=None):
-    num_harmonics = np.atleast_1d(num_harmonics)
+    
+    # Sanity checks
+    if not (isinstance(custom_basis, dict) or custom_basis is None):
+        raise TypeError("custom_basis should be a dictionary where the key is the index\n" +
+                        "of the period and the value is list containing the basis and the weights")
     Ps = np.atleast_1d(periods)
-    sort_idx = np.argsort(-Ps)
-    Ps = -np.sort(-Ps)
+    num_harmonics = np.atleast_1d(num_harmonics)
     if len(num_harmonics) == 1:
         num_harmonics = np.tile(num_harmonics, len(Ps))
     elif len(num_harmonics) != len(Ps):
         raise ValueError("Please pass a single number of harmonics for all periods or a number for each period")
+    standing_wave = np.atleast_1d(standing_wave)
+    if len(standing_wave) == 1:
+        standing_wave = np.tile(standing_wave, len(Ps))
+    elif len(standing_wave) != len(Ps):
+        raise ValueError("Please pass a single boolean for standing_wave for all periods or a boolean for each period")
+    
+    # Sort the periods and harmonics
+    sort_idx = np.argsort(-Ps)
+    Ps = -np.sort(-Ps) # Sort in descending order
     num_harmonics = num_harmonics[sort_idx]
+    standing_wave = standing_wave[sort_idx]
+
     ls_original = [weight * (2 * np.pi) / np.sqrt(P) for P in Ps]
-    # Create a sequence of values from 1 to K (repeated for cosine and sine)
-    i_value_list = [np.repeat(np.arange(1, nh + 1), 2) for nh in num_harmonics]
+    # Create a sequence of values from 1 to K (repeated for cosine and sine when not standing wave)
+    i_value_list = []
+    for ix, nh in enumerate(num_harmonics):
+        if standing_wave[ix]:
+            i_value_list.append(np.arange(1, nh + 1))
+        else:
+            i_value_list.append(np.repeat(np.arange(1, nh + 1), 2))
 
     # Create blocks of coefficients
     blocks_original = [iv * lx for iv, lx in zip(i_value_list, ls_original)]
