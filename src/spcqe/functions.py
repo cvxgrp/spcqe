@@ -3,32 +3,50 @@ from scipy.sparse import spdiags
 from itertools import combinations
 
 
-def make_basis_matrix(num_harmonics, length, periods, trend=False, max_cross_k=None, custom_basis=None):
+def make_basis_matrix(num_harmonics, length, periods, standing_wave=False, trend=False, max_cross_k=None, custom_basis=None):
+
+    # Sanity checks
     if not (isinstance(custom_basis, dict) or custom_basis is None):
         raise TypeError("custom_basis should be a dictionary where the key is the index\n" +
                         "of the period and the value is list containing the basis and the weights")
-    num_harmonics = np.atleast_1d(num_harmonics)
     Ps = np.atleast_1d(periods)
-    sort_idx = np.argsort(-Ps)
-    Ps = -np.sort(-Ps)
+    num_harmonics = np.atleast_1d(num_harmonics)
     if len(num_harmonics) == 1:
         num_harmonics = np.tile(num_harmonics, len(Ps))
     elif len(num_harmonics) != len(Ps):
         raise ValueError("Please pass a single number of harmonics for all periods or a number for each period")
-    # ensure if user has passed a list of harmonics, matching a list of periods, that we reorder that as well
+    standing_wave = np.atleast_1d(standing_wave)
+    if len(standing_wave) == 1:
+        standing_wave = np.tile(standing_wave, len(Ps))
+    elif len(standing_wave) != len(Ps):
+        raise ValueError("Please pass a single boolean for standing_wave for all periods or a boolean for each period")
+    
+    # Sort the periods and harmonics
+    sort_idx = np.argsort(-Ps)
+    Ps = -np.sort(-Ps) # Sort in descending order
     num_harmonics = num_harmonics[sort_idx]
-    ws = [2 * np.pi / P for P in Ps]
-    i_value_list = [np.arange(1, nh + 1)[:, np.newaxis] for nh in num_harmonics]  # Column vector
-    t_values = np.arange(length)  # Row vector
-    # Computing the cos and sin matrices for each period
-    B_cos_list = [np.cos(iv * w * t_values).T for w, iv in zip(ws, i_value_list)]
-    B_sin_list = [np.sin(iv * w * t_values).T for w, iv in zip(ws, i_value_list)]
+    standing_wave = standing_wave[sort_idx]
 
-    # Interleave the results for each period using advanced indexing
-    B_fourier = [np.empty((length, 2 * nh), dtype=float) for nh in num_harmonics]
-    for ix in range(len(Ps)):
-        B_fourier[ix][:, ::2] = B_cos_list[ix]
-        B_fourier[ix][:, 1::2] = B_sin_list[ix]
+    # Make the basis
+    t_values = np.arange(length) # Time stamps (row vector)
+    B_fourier = []
+    for ix, P in enumerate(Ps):
+        i_values = np.arange(1, num_harmonics[ix] + 1)[:, np.newaxis] # Harmonic indices (column vector)
+        if standing_wave[ix]:
+            w = 2 * np.pi / (P*2)
+            B_sin = np.sin(i_values * w * np.mod(t_values, P))
+            B_f = np.empty((length, num_harmonics[ix]), dtype=float)
+            B_f[:] = B_sin.T
+        else:
+            w = 2 * np.pi / P
+            B_cos = np.cos(i_values * w * t_values)
+            B_sin = np.sin(i_values * w * t_values)
+            B_f = np.empty((length, 2 * num_harmonics[ix]), dtype=float)
+            B_f[:, ::2] = B_cos.T
+            B_f[:, 1::2] = B_sin.T
+        B_fourier.append(B_f)
+    
+    # Use custom basis if provided
     if custom_basis is not None:
         for ix, val in custom_basis.items():
             # check length
@@ -42,7 +60,7 @@ def make_basis_matrix(num_harmonics, length, periods, trend=False, max_cross_k=N
             ixt = np.where(sort_idx == ix)[0][0]
             B_fourier[ixt] = new_val
 
-    # offset and linear terms
+    # Add offset and linear terms
     if trend is False:
         B_P0 = np.ones((length, 1))
         B0 = [B_P0]
@@ -52,15 +70,15 @@ def make_basis_matrix(num_harmonics, length, periods, trend=False, max_cross_k=N
         B_P0 = np.ones((length, 1))
         B0 = [B_PL, B_P0]
 
-    # cross terms, this handles the case of no cross terms gracefully (empty list)
+    # Cross terms, this handles the case of no cross terms gracefully (empty list)
     C = [cross_bases(*base_tuple, max_k=max_cross_k) for base_tuple in combinations(B_fourier, 2)]
 
     B_list = B0 + B_fourier + C
     B = np.hstack(B_list)
     return B
 
-
-def make_regularization_matrix(num_harmonics, weight, periods, trend=False, max_cross_k=None, custom_basis=None):
+# TODO: is it different if standing wave is True?
+def make_regularization_matrix(num_harmonics, weight, periods, standing_wave=False, trend=False, max_cross_k=None, custom_basis=None):
     num_harmonics = np.atleast_1d(num_harmonics)
     Ps = np.atleast_1d(periods)
     sort_idx = np.argsort(-Ps)

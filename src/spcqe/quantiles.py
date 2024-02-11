@@ -11,11 +11,12 @@ QUANTILES = (.02, .10, .20, .30, .40, .50, .60, .70, .80, .90, .98)
 
 
 class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
-    def __init__(self, num_harmonics, periods, trend=False, max_cross_k=None, quantiles=QUANTILES, weight=1, eps=0.01,
+    def __init__(self, num_harmonics, periods, standing_wave=False, trend=False, max_cross_k=None, quantiles=QUANTILES, weight=1, eps=0.01,
                  standardize_data=True,
                  take_log=False, solver='OSD', verbose=False, custom_basis=None):
         self.num_harmonics = num_harmonics
         self.periods = periods
+        self.standing_wave = standing_wave
         self.trend = trend
         self.max_cross_k = max_cross_k
         self.quantiles = np.atleast_1d(np.asarray(quantiles))
@@ -53,11 +54,11 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
             self._sc = FunctionTransformer(lambda x: x)
 
         if self.solver.lower() in ['mosek', 'osqp', 'scs', 'ecos', 'clarabel']:
-            fit_quantiles, basis = solve_cvx(data, self.num_harmonics, self.periods, self.trend, self.max_cross_k,
+            fit_quantiles, basis = solve_cvx(data, self.num_harmonics, self.periods, self.standing_wave, self.trend, self.max_cross_k,
                                              self.weight, self.quantiles, self.eps, self.solver.upper(), self.verbose,
                                              self.custom_basis)
         elif self.solver.lower() in ['sig-decomp', 'osd', 'qss']:
-            fit_quantiles, basis = solve_osd(data, self.num_harmonics, self.periods, self.trend, self.max_cross_k,
+            fit_quantiles, basis = solve_osd(data, self.num_harmonics, self.periods, self.standing_wave, self.trend, self.max_cross_k,
                                              self.weight, self.quantiles, self.eps, self.solver.upper(), self.verbose,
                                              self.custom_basis)
         else:
