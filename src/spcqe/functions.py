@@ -52,7 +52,7 @@ def make_basis_matrix(num_harmonics, length, periods, standing_wave=False, trend
             # check length
             if val.shape[0] != length:
                 # extend to cover future time period if necessary
-                multiplier = max(1, val.shape[0] // length + 1)
+                multiplier = max(1, length // val.shape[0] + 1)
                 new_val = np.tile(val, (multiplier, 1))[:length]
             else:
                 new_val = val[:length]
