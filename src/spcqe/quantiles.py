@@ -169,6 +169,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
                 mats[:, jx] = np.clip(data - stats.norm.ppf(self.quantiles)[jx - 1], 0, np.inf)
         Z = np.einsum('ij, ij -> i', mats, parameters)
         return Z
+    
     def x_expand(self, xi, tix):
         xin = np.atleast_1d(xi)
         h1 = np.ones_like(xin)
