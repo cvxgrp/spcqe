@@ -5,27 +5,7 @@ from itertools import combinations
 
 def make_basis_matrix(num_harmonics, length, periods, standing_wave=False, trend=False, max_cross_k=None, custom_basis=None):
 
-    # Sanity checks
-    if not (isinstance(custom_basis, dict) or custom_basis is None):
-        raise TypeError("custom_basis should be a dictionary where the key is the index\n" +
-                        "of the period and the value is list containing the basis and the weights")
-    Ps = np.atleast_1d(periods)
-    num_harmonics = np.atleast_1d(num_harmonics)
-    if len(num_harmonics) == 1:
-        num_harmonics = np.tile(num_harmonics, len(Ps))
-    elif len(num_harmonics) != len(Ps):
-        raise ValueError("Please pass a single number of harmonics for all periods or a number for each period")
-    standing_wave = np.atleast_1d(standing_wave)
-    if len(standing_wave) == 1:
-        standing_wave = np.tile(standing_wave, len(Ps))
-    elif len(standing_wave) != len(Ps):
-        raise ValueError("Please pass a single boolean for standing_wave for all periods or a boolean for each period")
-    
-    # Sort the periods and harmonics
-    sort_idx = np.argsort(-Ps)
-    Ps = -np.sort(-Ps) # Sort in descending order
-    num_harmonics = num_harmonics[sort_idx]
-    standing_wave = standing_wave[sort_idx]
+    sort_idx, Ps, num_harmonics, standing_wave = initialize_arrays(num_harmonics, periods, standing_wave, custom_basis)
 
     # Make the basis
     t_values = np.arange(length) # Time stamps (row vector)
@@ -77,30 +57,9 @@ def make_basis_matrix(num_harmonics, length, periods, standing_wave=False, trend
     B = np.hstack(B_list)
     return B
 
-# TODO: is it different if standing wave is True?
 def make_regularization_matrix(num_harmonics, weight, periods, standing_wave=False, trend=False, max_cross_k=None, custom_basis=None):
     
-    # Sanity checks
-    if not (isinstance(custom_basis, dict) or custom_basis is None):
-        raise TypeError("custom_basis should be a dictionary where the key is the index\n" +
-                        "of the period and the value is list containing the basis and the weights")
-    Ps = np.atleast_1d(periods)
-    num_harmonics = np.atleast_1d(num_harmonics)
-    if len(num_harmonics) == 1:
-        num_harmonics = np.tile(num_harmonics, len(Ps))
-    elif len(num_harmonics) != len(Ps):
-        raise ValueError("Please pass a single number of harmonics for all periods or a number for each period")
-    standing_wave = np.atleast_1d(standing_wave)
-    if len(standing_wave) == 1:
-        standing_wave = np.tile(standing_wave, len(Ps))
-    elif len(standing_wave) != len(Ps):
-        raise ValueError("Please pass a single boolean for standing_wave for all periods or a boolean for each period")
-    
-    # Sort the periods and harmonics
-    sort_idx = np.argsort(-Ps)
-    Ps = -np.sort(-Ps) # Sort in descending order
-    num_harmonics = num_harmonics[sort_idx]
-    standing_wave = standing_wave[sort_idx]
+    sort_idx, Ps, num_harmonics, standing_wave = initialize_arrays(num_harmonics, periods, standing_wave, custom_basis)
 
     ls_original = [weight * (2 * np.pi) / np.sqrt(P) for P in Ps]
     # Create a sequence of values from 1 to K (repeated for cosine and sine when not standing wave)
@@ -138,7 +97,6 @@ def make_regularization_matrix(num_harmonics, weight, periods, standing_wave=Fal
 
     return D
 
-
 def cross_bases(B_P1, B_P2, max_k=None):
     if max_k is None:
         # Reshape both arrays to introduce a new axis for broadcasting
@@ -159,3 +117,35 @@ def pinball_slopes(quantiles):
     a = (quantiles-.5)
     b = (0.5)*np.ones((len(a),))
     return a, b
+
+def initialize_arrays(num_harmonics, periods, standing_wave, custom_basis):
+
+    # Check custom_basis
+    if not (isinstance(custom_basis, dict) or custom_basis is None):
+        raise TypeError("custom_basis should be a dictionary where the key is the index\n" +
+                        "of the period and the value is list containing the basis and the weights")
+    
+    # Check periods
+    Ps = np.atleast_1d(periods)
+
+    # Check num_harmonics
+    num_harmonics = np.atleast_1d(num_harmonics)
+    if len(num_harmonics) == 1:
+        num_harmonics = np.tile(num_harmonics, len(Ps))
+    elif len(num_harmonics) != len(Ps):
+        raise ValueError("Please pass a single number of harmonics for all periods or a number for each period")
+    
+    # Check standing_wave
+    standing_wave = np.atleast_1d(standing_wave)
+    if len(standing_wave) == 1:
+        standing_wave = np.tile(standing_wave, len(Ps))
+    elif len(standing_wave) != len(Ps):
+        raise ValueError("Please pass a single boolean for standing_wave for all periods or a boolean for each period")
+    
+    # Sort the periods and harmonics
+    sort_idx = np.argsort(-Ps)
+    Ps = -np.sort(-Ps) # Sort in descending order
+    num_harmonics = num_harmonics[sort_idx]
+    standing_wave = standing_wave[sort_idx]
+
+    return sort_idx, Ps, num_harmonics, standing_wave
