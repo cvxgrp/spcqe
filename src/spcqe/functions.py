@@ -24,14 +24,14 @@ def make_basis_matrix(
     them into a single matrix, including cross-terms. It also includes an offset
     term, and can include a linear trend.
 
-    :param num_harmonics: int or 1darray of ints, number of harmonics to use for
-        each period.
+    :param num_harmonics: int or ndarray, 1D array of ints, number of harmonics to
+    use for each period.
     :param length: int, length of the time series.
-    :param periods: float or 1darray of floats, periods of signal. Each period will
-        yield a Fourier basis matrix.
-    :param standing_wave: boolean or 1darray of booleans, whether to use standing
-        wave basis for each period. A standing wave basis only includes sine terms
-        and starts at T/2. Defaults to False.
+    :param periods: float or ndarray, 1D array of floats with periods of signal. Each
+        period yields a Fourier basis matrix.
+    :param standing_wave: boolean or ndarray, 1D array of booleans, whether to use
+        standing wave basis for each period. A standing wave basis only includes sine
+        terms and starts at T/2. Defaults to False.
     :param trend: boolean, whether to include a linear trend in the basis matrix.
         Defaults to False.
     :param max_cross_k: int, maximum number of cross terms. Defaults to None.
@@ -39,7 +39,8 @@ def make_basis_matrix(
         matrices. The key is the index of the period and the value is the basis
         matrix. The user can input a shorter basis than length, but the associated
         period must be an int. Defaults to None.
-    :return: 2darray, basis matrix. The shape depends on the parameters.
+    :return: ndarray, 2D array of floats representing the basis matrix. The shape
+        depends on the parameters.
     """
     sort_idx, Ps, num_harmonics, standing_wave = initialize_arrays(
         num_harmonics, periods, standing_wave, custom_basis
@@ -112,19 +113,20 @@ def make_regularization_matrix(
     combines them into a single matrix. The weights are determined using the
     Dirichlet energy of the basis functions.
 
-    :param num_harmonics: int or 1darray of ints, number of harmonics to use for
-        each period.
+    :param num_harmonics: int or ndarray, 1D array of ints, number of harmonics to
+        use for each period.
     :param weight: float, weight for the regularization matrix.
-    :param periods: float or 1darray of floats, periods of signal. Each period
-        will yield a bloc.
-    :param standing_wave: boolean or 1darray of booleans, whether to use standing
-        wave basis for each period.
+    :param periods: float or ndarray, 1D array of floats, periods of signal. Each
+        period will yield a bloc.
+    :param standing_wave: boolean or ndarray, 1D array of booleans, whether to use
+        standing wave basis for each period.
     :param trend: boolean, whether to include a linear trend in the basis matrix.
         Defaults to False.
     :param max_cross_k: int, maximum number of cross terms. Defaults to None.
     :param custom_basis: dict, allows the user to pass a dictionary of custom basis
         matrices.
-    :return: 2darray, regularization matrix. The shape depends on the parameters.
+    :return: ndarray, 2D array of floats representing the regularization matrix. The
+        shape depends on the parameters.
     """
     sort_idx, Ps, num_harmonics, standing_wave = initialize_arrays(
         num_harmonics, periods, standing_wave, custom_basis
@@ -169,10 +171,10 @@ def initialize_arrays(num_harmonics, periods, standing_wave, custom_basis):
     It sorts everything in descending order of periods. It also performs some basic
     checks on the input parameters.
 
-    :param num_harmonics: int or 1darray of ints, number of harmonics to use for
-        each period.
-    :param periods: float or 1darray of floats, periods of signal. Each period
-        will yield a bloc.
+    :param num_harmonics: int or ndarray, 1D array of ints, number of harmonics to
+        use for each period.
+    :param periods: float or ndarray, 1D array of floats, periods of signal. Each
+        period yields a bloc.
     :param standing_wave: boolean or 1darray of booleans, whether to use standing wave
         basis for each period.
     :param custom_basis: dict, allows the user to pass a dictionary of custom basis
@@ -221,10 +223,10 @@ def cross_bases(B_P1, B_P2, max_k=None):
     """
     This function computes the cross terms between two basis matrices.
 
-    :param B_P1: 2darray, basis matrix for the first period.
-    :param B_P2: 2darray, basis matrix for the second period.
+    :param B_P1: ndarray, 2D array of floats, basis matrix for the first period.
+    :param B_P2: ndarray, 2D array of floats, basis matrix for the second period.
     :param max_k: int, maximum number of cross terms. Defaults to None.
-    :return: 2darray, cross terms matrix.
+    :return: ndarray, 2D array of floats, cross terms matrix.
     """
     if max_k is None:
         # Reshape both arrays to introduce a new axis for broadcasting
@@ -244,7 +246,7 @@ def pinball_slopes(quantiles):
     """
     This function computes the slopes for the pinball loss function.
 
-    :param quantiles: 1darray, quantiles.
+    :param quantiles: ndarray, 1D array quantiles.
     :return: tuple, slopes.
     """
     percentiles = np.asarray(quantiles)
