@@ -19,7 +19,7 @@ jobs:
               sudo python -m pip install -e .
 
           - name: Run Unit Tests
-            run: sudo python -m coverage run -m unittest
+            run: sudo python -m unittest
 
     test-build-pypi:
         runs-on: ubuntu-latest
