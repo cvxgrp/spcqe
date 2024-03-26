@@ -15,8 +15,7 @@ jobs:
 
           - name: Install Dependencies
             run: | 
-              sudo python -m pip install -r requirements.txt
-              python -m pip install -e .
+              sudo python -m pip install -e .
 
           - name: Run Unit Tests
             run: sudo $pythonLocation/bin/python3 -m coverage run -m unittest
@@ -42,7 +41,6 @@ jobs:
               sudo python3 -m build
 
     test-build-conda:
-        needs: run-tests
         runs-on: ubuntu-latest
         # sets default shell to remove need for source to run the conda shell
         defaults:
