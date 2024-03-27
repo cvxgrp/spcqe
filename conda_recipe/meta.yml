@@ -1,0 +1,42 @@
+{% set name = "spcqe" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: {{ environ.get('VERSION_FROM_GIT_TAG') }}
+
+source:
+  git_url: https://github.com/cvxgrp/spcqe
+
+build:
+  noarch: python
+  number: 0
+  script: "{{ PYTHON }} -m pip install . --ignore-installed -vv "
+
+requirements:
+  host:
+    - pip
+    - python
+    - numpy
+    - cvxpy
+    - scikit-learn
+    - tqdm
+
+  run:
+    - python
+    - numpy
+    - cvxpy
+    - scikit-learn
+    - tqdm
+
+about:
+  home: https://github.com/cvxgrp/spcqe
+  license: BSD
+  license_family: BSD
+  license_file:
+  summary: Smooth (multi-) periodic consistent quantile estimation
+  doc_url:
+  dev_url:
+
+extra:
+  recipe-maintainers:
+    - pluflou
