@@ -11,7 +11,7 @@ jobs:
           - name: Install Python
             uses: actions/setup-python@v3
             with:
-              python-version: '3.10'
+              python-version: "3.10"
 
           - name: Install Dependencies
             run: | 
@@ -32,7 +32,7 @@ jobs:
             with:
               python-version: "3.10"
 
-          - name: Install Twine
+          - name: Install Twine and Build
             run: sudo pip install twine build
 
           - name: Create the distribution
@@ -53,7 +53,7 @@ jobs:
           - name: Install Python
             uses: actions/setup-python@v3
             with:
-              python-version: "3.9"
+              python-version: "3.10"
 
           - name: Install Miniconda
             uses: conda-incubator/setup-miniconda@v2
@@ -71,11 +71,6 @@ jobs:
               git fetch --prune --unshallow --tags
               pip install -e .
 
-
-          # run install twice due to client-size to ensure all files downloaded
-          # echo yes before login to prevent anaconda bug breaking automation
-          # git tags MUST be fetched otherwise output will be blank
-          # bash variables cannot be used in github actions, must use actions specific syntax and methods
           - name: Build the Anaconda Package
             id: condabuild
             run: |
