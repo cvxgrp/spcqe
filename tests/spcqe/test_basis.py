@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from spcqe.functions import make_basis_matrix
-from test_functions import basis_3, basis_2
+from spcqe.test_functions import basis_3, basis_2
 
 
 class TestBasis(unittest.TestCase):
