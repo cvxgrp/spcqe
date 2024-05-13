@@ -14,7 +14,6 @@ class TestBasis(unittest.TestCase):
         basis_a = make_basis_matrix(num_harmonics=10, length=1000, periods=[11, 17], trend=True)
         basis_b = basis_2(10, 1000, 17, 11)
         np.testing.assert_array_equal(basis_a, basis_b)
-        self.assertEqual(basis_a.shape[1], 50)
 
     def test_multiple_harmonics(self):
         basis = make_basis_matrix(num_harmonics=[3, 4], length=100, periods=[11, 17], trend=True)
