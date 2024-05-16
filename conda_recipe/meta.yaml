@@ -1,5 +1,4 @@
 {% set name = "spcqe" %}
-{% set version = "0.0.1a0" %}
 
 package:
   name: {{ name|lower }}
@@ -10,17 +9,15 @@ source:
 
 build:
   noarch: python
-  script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+  script: {{ PYTHON }} -m pip install . -vv --no-deps --ignore-installed
   number: 0
 
 requirements:
   host:
-    - python >=3.9
-    - setuptools
-    - wheel
+    - python
     - pip
   run:
-    - python >=3.9
+    - python
     - numpy
     - cvxpy
     - scikit-learn
