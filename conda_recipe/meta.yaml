@@ -6,8 +6,7 @@ package:
   version: {{ version }}
 
 source:
-  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/spcqe-{{ version }}.tar.gz
-  sha256: c9300c2274641c58886dfba464031c6e163ea2da87c0542b2dca7805a1448186
+  path: .. 
 
 build:
   noarch: python
@@ -23,10 +22,9 @@ requirements:
   run:
     - python >=3.9
     - numpy
-    - cvxpy=1.4.3
+    - cvxpy
     - scikit-learn
     - tqdm
-    - pybind11
 
 test:
   imports:
