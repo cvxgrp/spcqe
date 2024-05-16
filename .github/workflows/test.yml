@@ -77,8 +77,8 @@ jobs:
           - name: Build the Anaconda Package
             id: condabuild
             run: |
-              conda install anaconda-client
+              conda install anaconda-client conda-verify
               conda config --set anaconda_upload no --set solver libmamba
               conda list
-              VERSION_FROM_GIT_TAG=$(git tag --list "v*[0-9]" --sort=version:refname | tail -1 | cut -c 2-) conda build . -c conda-forge
+              VERSION_FROM_GIT_TAG=$(git tag --list "v*[0-9]" --sort=version:refname | tail -1 | cut -c 2-) conda build . -c conda-forge -c stanfordcvxgrp
               echo "gitversion=$(git tag --list "v*[0-9]" --sort=version:refname | tail -1 | cut -c 2-)" >> $GITHUB_OUTPUT
