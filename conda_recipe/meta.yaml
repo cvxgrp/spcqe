@@ -23,7 +23,7 @@ requirements:
   run:
     - python >=3.9
     - numpy
-    - cvxpy
+    - cvxpy=1.4.3
     - scikit-learn
     - tqdm
 
