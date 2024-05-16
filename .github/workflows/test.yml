@@ -73,7 +73,7 @@ jobs:
               conda install python=3.10 conda-build colorama pip ruamel ruamel.yaml rich jsonschema -c conda-forge
               git fetch --prune --unshallow --tags
               pip install -e .
-              pip freeze
+              echo "pip freeze" >> $GITHUB_OUTPUT
 
           - name: Build the Anaconda Package
             id: condabuild
