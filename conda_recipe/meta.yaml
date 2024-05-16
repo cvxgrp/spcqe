@@ -2,8 +2,8 @@
 
 package:
   name: {{ name|lower }}
-  version: {{ version }}
-
+  version: {{ environ.get('VERSION_FROM_GIT_TAG') }}
+  
 source:
   path: .. 
 
