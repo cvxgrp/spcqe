@@ -26,6 +26,7 @@ requirements:
     - cvxpy=1.4.3
     - scikit-learn
     - tqdm
+    - pybind11
 
 test:
   imports:
