@@ -23,10 +23,11 @@ requirements:
   run:
     - python >=3.9
     - numpy
-    - cvxpy
+    - cvxpy <1.5.0
     - scikit-learn
     - tqdm
     - pybind11 # conda build test fails with "cvxpy 1.4.2 requires pybind11, which is not installed."
+
 
 test:
   imports:
