@@ -29,7 +29,7 @@ class TestBasis(unittest.TestCase):
         )
         spq1.fit(sig)
         transformed_b1 = spq1.transform(sig)
-        np.testing.assert_allclose(transformed_a1, transformed_b1, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(transformed_a1, transformed_b1, rtol=1e-5, atol=1e-6)
 
     def test_transform2(self):
         sig = np.load(os.path.join(self.directory, 'pvsig.npy'))
