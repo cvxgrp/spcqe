@@ -27,6 +27,7 @@ requirements:
     - scikit-learn
     - tqdm
     - pybind11 # conda build test fails with "cvxpy 1.4.2 requires pybind11, which is not installed."
+    - sig-decomp
 
 
 test:

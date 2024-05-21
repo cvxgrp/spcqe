@@ -18,5 +18,6 @@ dependencies = [
     "numpy",
     "cvxpy==1.4.4",
     "scikit-learn",
-    "tqdm"
+    "tqdm",
+    "sig-decomp"
 ]
