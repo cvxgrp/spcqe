@@ -24,6 +24,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         standardize_data=True,
         take_log=False,
         solver="OSD",
+        problem="sequential",
         verbose=False,
         custom_basis=None,
     ):
@@ -36,6 +37,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         self.weight = weight
         self.eps = eps
         self.solver = solver
+        self.problem = problem
         self.standardize_data = standardize_data
         self.take_log = take_log
         self.verbose = verbose
@@ -68,7 +70,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
             # set to identity function
             self._sc = FunctionTransformer(lambda x: x)
 
-        if self.solver.lower() in ["mosek", "osqp", "scs", "ecos", "clarabel"]:
+        if self.problem == "full":
             fit_quantiles, basis = solve_cvx(
                 data,
                 self.num_harmonics,
@@ -83,7 +85,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
                 self.verbose,
                 self.custom_basis,
             )
-        elif self.solver.lower() in ["sig-decomp", "osd", "qss"]:
+        elif self.problem == "sequential":
             fit_quantiles, basis = solve_osd(
                 data,
                 self.num_harmonics,
@@ -99,7 +101,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
                 self.custom_basis,
             )
         else:
-            raise NotImplementedError("non-cvxpy solution methods not yet implemented")
+            raise NotImplementedError("Only 'full' and 'sequential' problems supported")
         self.basis = basis
         try:
             self.fit_quantiles = self._sc.inverse_transform(fit_quantiles)

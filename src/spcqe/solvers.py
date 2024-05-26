@@ -112,6 +112,7 @@ def solve_osd(
                 osd_abs = 1e-3
             problem.decompose(
                 verbose=verbose,
+                solver=solver,
                 rho_update="none",
                 rho=[0.5, 0.02],
                 max_iter=5000,
@@ -127,6 +128,7 @@ def solve_osd(
         # problem.decompose(verbose=verbose, rho_update="none", rho=[10, .1], max_iter=5000, eps_abs=1e-3, eps_rel=1e-3)
         problem.decompose(
             verbose=verbose,
+            solver=solver,
             rho_update="none",
             rho=[0.5, 0.02],
             max_iter=5000,
