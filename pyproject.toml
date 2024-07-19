@@ -16,7 +16,8 @@ requires-python = ">=3.9"
 license = {text = "BSD-2-Clause"}
 dependencies = [
     "numpy",
-    "cvxpy",
+    "cvxpy==1.4.3",
     "scikit-learn",
-    "tqdm"
+    "tqdm",
+    "sig-decomp"
 ]
