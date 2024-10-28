@@ -9,64 +9,65 @@ import seaborn as sns
 dist = sps.norm()
 
 def get_asymptote_parameters_out(x0, _y0, x1, _y1, yasympt):
+    # Looking for a function of type yasympt + alpha * exp(beta * x)
+    # With C1 continuity constraints at (x0, y0)
     y0, y1 = dist.ppf(_y0), dist.ppf(_y1)
     yprime0 = (y0 - y1) / (x0 - x1)
     beta = yprime0 / (y0 - yasympt)
-
     exp_input = -beta * x0
-    alpha = np.where(
-        np.isinf(exp_input) | np.isnan(exp_input),
-        np.inf,  # Return +inf for invalid exp inputs
-        - (yasympt - y0) * np.exp(exp_input)
-    )
+    exp_output = safe_exp(exp_input)
+    alpha = - (yasympt - y0) * exp_output
     return alpha, beta
 
 def get_asymptote_parameters_in(x0, _y0, x1, _y1, xasympt):
+    # Looking for a function of type beta * np.log(alpha *(x - xasympt))
+    # With C1 continuity constraints at (x0, y0)
     y0, y1 = dist.ppf(_y0), dist.ppf(_y1)
     yprime0 = (y1 - y0) / (x1 - x0)
     beta = yprime0 * (x0 - xasympt)
-
-    # Create a mask for valid x0 values
-    valid_mask = x0 > xasympt
-    exp_input = np.where(valid_mask, y0 / beta, np.inf)  # Default to +inf if invalid
-
-    alpha = np.where(
-        np.isinf(exp_input) | np.isnan(exp_input),
-        np.inf,  # Return +inf for invalid exp inputs
-        1 / (x0 - xasympt) * np.exp(exp_input)
-    )
+    exp_input = y0 / beta
+    exp_output = safe_exp(exp_input)
+    alpha = 1 / (x0 - xasympt) * exp_output
     return alpha, beta
 
 def asymptote_out(x, yasympt, alpha, beta):
     exp_input = beta * x
-    return np.where(
-        np.isinf(exp_input) | np.isnan(exp_input),
-        np.inf,  # Return +inf for invalid exp inputs
-        yasympt + alpha * np.exp(exp_input)
-    )
+    exp_output = safe_exp(exp_input)
+    return yasympt + alpha * exp_output
+
 
 def asymptote_in(x, xasympt, alpha, beta):
     log_input = alpha * (x - xasympt)
-    return np.where(
-        (x <= xasympt) | (log_input <= 0),
-        -np.inf,  # Return -inf for invalid conditions
-        beta * np.log(log_input)
-    )
+    log_output = safe_log(log_input)
+    return beta * log_output
 
 def inverse_asymptote_out(y, yasympt, alpha, beta):
     log_input = (y - yasympt) / alpha
-    return np.where(
-        log_input <= 0,
-        -np.inf,  # Return -inf for invalid log input
-        np.log(log_input) / beta
-    )
+    log_output = safe_log(log_input)
+    return log_output / beta
 
 def inverse_asymptote_in(y, xasympt, alpha, beta):
     exp_input = y / beta
+    exp_output = safe_exp(exp_input)
+    return xasympt + exp_output / alpha
+
+def safe_exp(exp_input):
+    exp_output = np.empty_like(exp_input)
+    exp_output[exp_input > 709] = np.inf
+    exp_output[exp_input < -709] = 0
+    exp_output[(-709 <= exp_input) & (exp_input <= 709)] = np.exp(exp_input[(-709 <= exp_input) & (exp_input <= 709)])
+    return exp_output
     return np.where(
-        np.isinf(exp_input) | np.isnan(exp_input),
-        np.inf,  # Return +inf for invalid exp inputs
-        xasympt + np.exp(exp_input) / alpha
+        exp_input > 709, # exp(709) is the largest value without overflow
+        np.inf,
+        np.where(exp_input < -709, 0, np.exp(exp_input))
+    )
+
+def safe_log(log_input):
+    return np.where(
+        log_input <= 0,
+        -np.inf,  # Return -inf for invalid log input
+        np.log(log_input)
     )
 
 
@@ -83,9 +84,6 @@ def find_idx_in_signal(tail, idx_in_tail, transf):
     return np.arange(len(transf))[tail][idx_in_tail]
 
 def plot_tails(ax, sig, quantiles, fit_quantiles, transf, params, key, asymptote, space, index, extrap_width):
-               
-    #           space, asymp, idx_tail, extrap_xs):
-    # params = MyAsympTransformer.parameters[tail]
     
     linear_interp = interp1d(fit_quantiles[index], dist.ppf(quantiles), kind='linear', fill_value='extrapolate')
     if key == 'upper':
@@ -105,7 +103,6 @@ def plot_tails(ax, sig, quantiles, fit_quantiles, transf, params, key, asymptote
     ax.scatter(fit_quantiles[index], dist.ppf(quantiles), color='C3', marker='+', label='quantiles setpoints')
     ax.axvline(sig[index], color='C3', linestyle='--', label='value to transform')
     ax.plot(sig_values, linear_interp(sig_values), label='linear transform function')
-    #ax.scatter(sig[index], transf[index], marker='x', label='transformed value - linear')
     ax.plot(
         extrap_values,
         extrap_ys,

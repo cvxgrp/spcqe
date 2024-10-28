@@ -360,7 +360,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
     
     def plot_pdf(self, Z, ax=None, label=None):
         if ax is None:
-            fig, ax = plt.subplots()
+            fig, ax = plt.subplots(figsize=(14, 6))
         if label is None:
             label = 'Transformed Signal'
         ax = plot_pdf(ax, Z, label)
@@ -368,7 +368,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
     
     def plot_tail_transformation(self, X, Z, key, index, extrap_width, ax=None):
         if ax is None:
-            fig, ax = plt.subplots()
+            fig, ax = plt.subplots(figsize=(14, 6))
         ax = plot_tails(
             ax,
             X,
