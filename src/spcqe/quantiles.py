@@ -1,16 +1,37 @@
-import numpy as np
 from time import time
+
+import numpy as np
 from sklearn.base import TransformerMixin, BaseEstimator
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import FunctionTransformer
 import scipy.stats as stats
+import matplotlib.pyplot as plt
+
 from spcqe.solvers import solve_cvx, solve_osd
 from spcqe.functions import make_basis_matrix
+from spcqe.extrapolate_asymptotic import (
+    get_asymptote_parameters_out,
+    get_asymptote_parameters_in,
+    asymptote_out,
+    asymptote_in,
+    inverse_asymptote_out,
+    inverse_asymptote_in,
+    plot_pdf,
+    plot_tails
+)
 
 QUANTILES = (0.02, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.98)
 
 
 class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
+    """
+        extrapolate should be a dict with the following keys:
+        - 'lower': tupple, (asymptote value, variable space)
+        - 'upper': tupple, (asymptote value, variable space)
+        The space should either be input or output.
+        For a linear extrapolation, the dict key should point
+        to the string 'linear' instead of a tuple.
+        """
     def __init__(
         self,
         num_harmonics,
@@ -27,6 +48,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         problem="sequential",
         verbose=False,
         custom_basis=None,
+        extrapolate=None,
     ):
         self.num_harmonics = num_harmonics
         self.periods = periods
@@ -42,11 +64,13 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         self.take_log = take_log
         self.verbose = verbose
         self.custom_basis = custom_basis
+        self.extrapolate = extrapolate
         self.length = None
         self.basis = None
         self.fit_quantiles = None
         self.fit_parameters = None
         self.transform_parameters = None
+        self.extrapolation_parameters = None
         self.fit_time = None
         self._sc = None
 
@@ -116,6 +140,46 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
             self.basis, self.fit_quantiles, rcond=None
         )
         self.length = len(data)
+        self.extrapolation_parameters = {
+            'lower':
+            {
+                'tails': (X < self.fit_quantiles[:, 0]),
+                'setpoints_in': (self.fit_quantiles[:, 0], self.fit_quantiles[:, 1]),
+                'setpoints_out': (self.quantiles[0], self.quantiles[1]),
+                'params': None,
+            },
+            'upper':
+            {
+                'tails': (X > self.fit_quantiles[:, -1]),
+                'setpoints_in': (self.fit_quantiles[:, -1], self.fit_quantiles[:, -2]),
+                'setpoints_out': (self.quantiles[-1], self.quantiles[-2]),
+                'params': None,
+            },
+        }
+        for key in ['lower', 'upper']:
+            extrapolate_type = self.extrapolate[key]
+            if extrapolate_type == 'linear':
+                continue
+            else:
+                asymptote_value = extrapolate_type[0]
+                setpoints_in = self.extrapolation_parameters[key]['setpoints_in']
+                setpoints_out = self.extrapolation_parameters[key]['setpoints_out']
+                if self.extrapolate[key][1] == 'input':
+                    self.extrapolation_parameters[key]['params'] = get_asymptote_parameters_in(
+                        setpoints_in[0],
+                        setpoints_out[0],
+                        setpoints_in[1],
+                        setpoints_out[1],
+                        asymptote_value
+                    )
+                elif self.extrapolate[key][1] == 'output':
+                    self.extrapolation_parameters[key]['params'] = get_asymptote_parameters_out(
+                        setpoints_in[0],
+                        setpoints_out[0],
+                        setpoints_in[1],
+                        setpoints_out[1],
+                        asymptote_value
+                    )
         tf = time()
         self.fit_time = tf - ti
 
@@ -143,6 +207,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         # get correct basis matrix and quantile estimates for time period of prediction
         if y is not None:
             new_quantiles = self.predict(y)
+            #TODO: implement the asymptote transform for y not none
         else:
             new_quantiles = self.fit_quantiles
         # fit piecewise linear transforms, one for each time index
@@ -180,6 +245,15 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
                 mats[:, jx] = np.clip(data - new_quantiles[:, jx - 1], 0, np.inf)
         # Finally, apply all the transforms, one for each time index, i
         Z = np.einsum("ij, ij -> i", mats, parameters)
+        for key, method in self.extrapolate.items():
+            if method == 'linear':
+                continue
+            tail = self.extrapolation_parameters[key]['tails']
+            params = self.extrapolation_parameters[key]['params']
+            asymptote_func = asymptote_in if method[1] == 'input' else asymptote_out
+            Z[tail] = asymptote_func(
+                X[tail], method[0], params[0][tail], params[1][tail]
+            )
         return Z
 
     def inverse_transform(self, X, y=None):
@@ -191,6 +265,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         # get correct basis matrix and quantile estimates for time period of prediction
         if y is not None:
             new_quantiles = self.predict(y)
+            #TODO: implement the asymptote inverse transform for y not none
         else:
             new_quantiles = self.fit_quantiles
         # fit piecewise linear transforms, one for each time index
@@ -225,6 +300,15 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
                     data - stats.norm.ppf(self.quantiles)[jx - 1], 0, np.inf
                 )
         Z = np.einsum("ij, ij -> i", mats, parameters)
+        for key, method in self.extrapolate.items():
+            if method == 'linear':
+                continue
+            tail = self.extrapolation_parameters[key]['tails']
+            params = self.extrapolation_parameters[key]['params']
+            asymptote_func = inverse_asymptote_in if method[1] == 'input' else inverse_asymptote_out
+            Z[tail] = asymptote_func(
+                X[tail], method[0], params[0][tail], params[1][tail]
+            )
         return Z
 
     def x_expand(self, xi, tix):
@@ -273,3 +357,28 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
             raise NotImplementedError(
                 "Extending the basis to time before the training data not currently supported"
             )
+    
+    def plot_pdf(self, Z, ax=None, label=None):
+        if ax is None:
+            fig, ax = plt.subplots()
+        if label is None:
+            label = 'Transformed Signal'
+        ax = plot_pdf(ax, Z, label)
+        return ax
+    
+    def plot_tail_transformation(self, X, Z, key, index, extrap_width, ax=None):
+        if ax is None:
+            fig, ax = plt.subplots()
+        ax = plot_tails(
+            ax,
+            X,
+            self.quantiles,
+            self.fit_quantiles,
+            Z,
+            self.extrapolation_parameters[key]['params'],
+            key,
+            self.extrapolate[key][0],
+            self.extrapolate[key][1],
+            index,
+            extrap_width)
+        return ax
