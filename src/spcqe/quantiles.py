@@ -191,7 +191,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         # for ix in range(new_quantiles.shape[0]):
         #     mats[ix] = self.x_expand(new_quantiles[ix], ix)
         # the LHS of each matrix equation is the same and does not change over time
-        yy = stats.norm.ppf(self.quantiles)[np.newaxis, :]
+        yy = stats.norm.ppf(self.quantiles)
         # solve vectorized matrix equations, T independent (q x q) set of equations
         parameters = np.linalg.solve(mats, yy)
         # apply the transform to the new data: this makes the PWL basis expansion for the new data (T x q)
