@@ -57,11 +57,6 @@ def safe_exp(exp_input):
     exp_output[exp_input < -709] = 0
     exp_output[(-709 <= exp_input) & (exp_input <= 709)] = np.exp(exp_input[(-709 <= exp_input) & (exp_input <= 709)])
     return exp_output
-    return np.where(
-        exp_input > 709, # exp(709) is the largest value without overflow
-        np.inf,
-        np.where(exp_input < -709, 0, np.exp(exp_input))
-    )
 
 def safe_log(log_input):
     return np.where(
