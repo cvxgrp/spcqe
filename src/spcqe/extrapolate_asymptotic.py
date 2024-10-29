@@ -59,11 +59,10 @@ def safe_exp(exp_input):
     return exp_output
 
 def safe_log(log_input):
-    return np.where(
-        log_input <= 0,
-        -np.inf,  # Return -inf for invalid log input
-        np.log(log_input)
-    )
+    log_output = np.empty_like(log_input)
+    log_output[log_input <= 0] = -np.inf
+    log_output[log_input > 0] = np.log(log_input[log_input > 0])
+    return log_output
 
 
 def plot_pdf(ax, transf, label):
