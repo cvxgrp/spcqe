@@ -8,7 +8,8 @@ name = "spcqe"
 version = "0.0.1a"
 authors = [
     {name = "Mehmet Giray Ogut", email = "giray98@stanford.edu"},
-    {name = "Bennet Meyers", email = "bennetm@stanford.edu"}
+    {name = "Bennet Meyers", email = "bennetm@stanford.edu"},
+    {name = "Aramis Dufour", email = "adufour@stanford.edu"}
 ]
 description = "Smooth periodic consistent quantile estimation"
 readme = "README.md"

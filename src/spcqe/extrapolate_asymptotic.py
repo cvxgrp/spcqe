@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 dist = sps.norm()
+XSOLAR = -0.025
+YSOLAR = dist.ppf(0.99999)
 
 def get_asymptote_parameters_out(x0, _y0, x1, _y1, yasympt):
     # Looking for a function of type yasympt + alpha * exp(beta * x)
@@ -64,6 +66,13 @@ def safe_log(log_input):
     log_output[log_input > 0] = np.log(log_input[log_input > 0])
     return log_output
 
+def init_extrap(extrapolate):
+    if extrapolate == 'linear':
+        return {'lower': 'linear', 'upper': 'linear'}
+    elif extrapolate == 'solar':
+        extrapolate = {'lower':(XSOLAR, 'input'), 'upper':(YSOLAR, 'output')}
+    return extrapolate
+
 
 def plot_pdf(ax, transf, label):
     x = np.linspace(-4, 4, 1000)
@@ -77,32 +86,41 @@ def plot_pdf(ax, transf, label):
 def find_idx_in_signal(tail, idx_in_tail, transf):
     return np.arange(len(transf))[tail][idx_in_tail]
 
-def plot_tails(ax, sig, quantiles, fit_quantiles, transf, params, key, asymptote, space, index, extrap_width):
+def plot_tails(ax, sig, quantiles, fit_quantiles, transf, method, key, index, extrap_width,
+               params=None,
+               asymptote=None,
+               space=None):
     
     linear_interp = interp1d(fit_quantiles[index], dist.ppf(quantiles), kind='linear', fill_value='extrapolate')
     if key == 'upper':
         sig_values = np.linspace(fit_quantiles[index, 0], sig[index], 100)
         extrap_values = np.linspace(fit_quantiles[index, -1], fit_quantiles[index, -1] + extrap_width, 100)
-        if space == 'output':
-            extrap_ys = asymptote_out(extrap_values, asymptote, params[0][index], params[1][index])
-        elif space == 'input':
-            extrap_ys = asymptote_in(extrap_values, asymptote, params[0][index], params[1][index])
+        if method == 'asymptotic':
+            if space == 'output':
+                extrap_ys = asymptote_out(extrap_values, asymptote, params[0][index], params[1][index])
+            elif space == 'input':
+                extrap_ys = asymptote_in(extrap_values, asymptote, params[0][index], params[1][index])
+        elif method == 'linear':
+            extrap_ys = linear_interp(extrap_values)
     elif key == 'lower':
         sig_values = np.linspace(sig[index], fit_quantiles[index, -1], 100)
         extrap_values = np.linspace(fit_quantiles[index, 0] - extrap_width, fit_quantiles[index, 0], 100)
-        if space == 'output':
-            extrap_ys = asymptote_out(extrap_values, asymptote, params[0][index], params[1][index])
-        elif space == 'input':
-            extrap_ys = asymptote_in(extrap_values, asymptote, params[0][index], params[1][index])
+        if method == 'asymptotic':
+            if space == 'output':
+                extrap_ys = asymptote_out(extrap_values, asymptote, params[0][index], params[1][index])
+            elif space == 'input':
+                extrap_ys = asymptote_in(extrap_values, asymptote, params[0][index], params[1][index])
+        elif method == 'linear':
+            extrap_ys = linear_interp(extrap_values)
     ax.scatter(fit_quantiles[index], dist.ppf(quantiles), color='C3', marker='+', label='quantiles setpoints')
     ax.axvline(sig[index], color='C3', linestyle='--', label='value to transform')
-    ax.plot(sig_values, linear_interp(sig_values), label='linear transform function')
+    ax.plot(sig_values, linear_interp(sig_values), label='linear transform')
     ax.plot(
         extrap_values,
         extrap_ys,
         linestyle='--',
         color='black',
-        label='asymptotic outer transform function'
+        label='extrapolation transform'
         )
     ax.scatter(sig[index], transf[index], color='black', marker='x', label='transformed value')
     ax.set_title(f'Transfer function from dilated signal to normal distribution - {key} tail')
