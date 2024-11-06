@@ -168,7 +168,6 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         # get correct basis matrix and quantile estimates for time period of prediction
         if y is not None:
             new_quantiles = self.predict(y)
-            #TODO: implement the asymptote transform for y not none
         else:
             new_quantiles = self.fit_quantiles
         # fit piecewise linear transforms, one for each time index
@@ -252,7 +251,6 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         # get correct basis matrix and quantile estimates for time period of prediction
         if y is not None:
             new_quantiles = self.predict(y)
-            #TODO: implement the asymptote inverse transform for y not none
         else:
             new_quantiles = self.fit_quantiles
         # fit piecewise linear transforms, one for each time index
