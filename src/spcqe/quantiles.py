@@ -212,7 +212,8 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         # We will need to store tail and parameters for inverse transform
         self.extrapolation_parameters = {
             'tails': {'lower' : None, 'upper': None},
-            'params': {'lower' : None, 'upper': None}
+            'params': {'lower' : None, 'upper': None},
+            'new_quantiles': new_quantiles,
             }
         for key, method in self.extrapolate.items():
             if method == 'linear':
@@ -269,10 +270,10 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
                     np.inf,
                 )
         # add a new axis for vectorized numpy matrix solve
-        mats = mats[np.newaxis, :, :]
+        mats = mats
         # in the inverse, there is now a different LHS for each matrix equation
         yy = new_quantiles
-        parameters = np.linalg.solve(mats, yy)  # shape len(data) x len(quantiles)
+        parameters = np.linalg.solve(mats, yy.T).T  # shape len(data) x len(quantiles)
         # apply the transform to the new data (T x q)
         mats = np.empty((new_quantiles.shape[0], len(self.quantiles)))
         for jx in range(len(self.quantiles)):
@@ -331,9 +332,9 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
 
     def extend_basis(self, t):
         T = self.basis.shape[0]
-        if 0 <= t < T:
+        if 0 <= t <= T:
             return self.basis
-        elif t >= T:
+        elif t > T:
             new_basis = make_basis_matrix(
                 self.num_harmonics,
                 t,
@@ -342,6 +343,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
                 custom_basis=self.custom_basis,
             )
             return new_basis
+            # TODO: check if this is the correct way to extend the basis
         else:
             raise NotImplementedError(
                 "Extending the basis to time before the training data not currently supported"
@@ -355,7 +357,18 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         ax = plot_pdf(ax, Z, label)
         return ax
     
-    def plot_tail_transformation(self, X, Z, key, index, extrap_width, ax=None):
+    def plot_tail_transformation_solar(
+            self,
+            X,
+            Z,
+            key,
+            index,
+            extrap_width,
+            h_per_day=None,
+            n_days=15,
+            n_hours=3,
+            ax=None
+            ):
         if ax is None:
             fig, ax = plt.subplots(figsize=(14, 6))
         if self.extrapolate[key] == 'linear':
@@ -363,26 +376,32 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
                 ax,
                 X,
                 self.quantiles,
-                self.fit_quantiles,
+                self.extrapolation_parameters['new_quantiles'],
                 Z,
                 'linear',
                 key,
                 index,
-                extrap_width
+                extrap_width,
+                h_per_day = h_per_day,
+                n_days=n_days,
+                n_hours=n_hours,
                 )
         else:
             ax = plot_tails(
                 ax,
                 X,
                 self.quantiles,
-                self.fit_quantiles,
+                self.extrapolation_parameters['new_quantiles'],
                 Z,
                 'asymptotic',
                 key,
                 index,
                 extrap_width,
-                self.extrapolation_parameters['params'][key],
-                self.extrapolate[key][0],
-                self.extrapolate[key][1]
+                h_per_day = h_per_day,
+                params = self.extrapolation_parameters['params'][key],
+                asymptote = self.extrapolate[key][0],
+                space = self.extrapolate[key][1],
+                n_days=n_days,
+                n_hours=n_hours,
                 )
         return ax
