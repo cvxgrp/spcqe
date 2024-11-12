@@ -6,7 +6,7 @@ random variable.
 It fits smoothly varying quantiles to the signal
 using a Fourier basis.
                 
-Author: Bennet Meyers, Aramis Dufour
+:author: Bennet Meyers, Aramis Dufour
 """
 
 from time import time

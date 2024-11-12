@@ -7,15 +7,13 @@ Input space asymptotes have the form
                 beta * np.log(alpha * (x - xasympt))
 It also provide plot functions for the usecase of pv signal.
                 
-Author: Aramis Dufour
+:author: Aramis Dufour
 """
 
 
 import numpy as np
 import scipy.stats as sps
 from scipy.interpolate import interp1d
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 dist = sps.norm()
 XSOLAR = 0
@@ -143,10 +141,11 @@ def plot_pdf(ax, transf, label):
     """
     x = np.linspace(-4, 4, 1000)
     y = sps.norm.pdf(x)
-    sns.histplot(transf, bins=1000, stat='density', ax=ax, kde=False, label=label)
+    ax.hist(transf, bins=1000, density=True, label=label)
     ax.plot(x, y, 'r', label='Normal PDF')
     ax.set_xlabel('Transformed Signal')
     ax.legend()
+    
     return ax
 
 def plot_tails(ax, sig, quantiles, fit_quantiles, transf, method, key, index, extrap_width,
