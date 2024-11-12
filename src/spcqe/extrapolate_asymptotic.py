@@ -7,7 +7,7 @@ Input space asymptotes have the form
                 beta * np.log(alpha * (x - xasympt))
 It also provide plot functions for the usecase of pv signal.
                 
-Author: Aramis Dufour, 2024
+Author: Aramis Dufour
 """
 
 
@@ -31,7 +31,7 @@ def get_asymptote_parameters_out(x0, _y0, x1, _y1, yasympt):
     """
     y0, y1 = dist.ppf(_y0), dist.ppf(_y1)
     yprime0 = (y0 - y1) / (x0 - x1)
-    beta = yprime0 / (y0 - yasympt)
+    beta = safe_divide(yprime0, y0 - yasympt)
     exp_input = -beta * x0
     exp_output = safe_exp(exp_input)
     alpha = - (yasympt - y0) * exp_output
@@ -77,18 +77,18 @@ def inverse_asymptote_out(y, yasympt, alpha, beta):
     Inverse transform with an aymptote in the
     output space.
     """
-    log_input = (y - yasympt) / alpha
+    log_input = safe_divide(y - yasympt, alpha)
     log_output = safe_log(log_input)
-    return log_output / beta
+    return safe_divide(log_output, beta)
 
 def inverse_asymptote_in(y, xasympt, alpha, beta):
     """
     Inverse transform with an aymptote in the
     input space.
     """
-    exp_input = y / beta
+    exp_input = safe_divide(y, beta)
     exp_output = safe_exp(exp_input)
-    return xasympt + exp_output / alpha
+    return xasympt + safe_divide(exp_output, alpha)
 
 def safe_exp(exp_input):
     """
@@ -110,6 +110,17 @@ def safe_log(log_input):
     log_output[log_input <= 0] = -np.inf
     log_output[log_input > 0] = np.log(log_input[log_input > 0])
     return log_output
+
+def safe_divide(a, b):
+    """
+    Safe division.
+    Avoids division by zero.
+    """
+    division_output = np.empty_like(a)
+    division_output[np.logical_and(a==0, b==0)] = np.nan
+    division_output[np.logical_and(a!=0, b==0)] = a[np.logical_and(a!=0, b==0)] * np.inf
+    division_output[b != 0] = a[b != 0] / b[b != 0]
+    return division_output
 
 def init_extrap(extrapolate):
     """
@@ -193,3 +204,13 @@ def plot_tails(ax, sig, quantiles, fit_quantiles, transf, method, key, index, ex
     ax.set_title(f'Transfer function from dilated signal to normal distribution - {key} tail')
     ax.legend()
     return ax
+
+def get_tail(X, quantiles, tail):
+    """
+    Get the tail of the signal.
+    """
+    if tail == 'upper':
+        mask = X > dist.ppf(quantiles[-1])
+    elif tail == 'lower':
+        mask = X < dist.ppf(quantiles[0])
+    return mask
