@@ -110,15 +110,23 @@ def solve_osd(
                 osd_abs = 1e-4
             else:
                 osd_abs = 1e-3
-            problem.decompose(
-                verbose=verbose,
-                solver=solver,
-                rho_update="none",
-                rho=[0.5, 0.02],
-                max_iter=5000,
-                eps_abs=osd_abs,
-                eps_rel=osd_abs,
-            )
+            if solver == 'qss':
+                problem.decompose(
+                    verbose=verbose,
+                    solver=solver,
+                    rho_update="none",
+                    rho=[0.5, 0.02],
+                    max_iter=5000,
+                    eps_abs=osd_abs,
+                    eps_rel=osd_abs,
+                )
+            else:
+                problem.decompose(
+                    verbose=verbose,
+                    solver=solver,
+                    eps_abs=osd_abs,
+                    eps_rel=osd_abs,
+                )
             quantile_estimates[:, ix] = problem.decomposition[1]
         quantile_estimates = np.sort(quantile_estimates, axis=1)
     else:
