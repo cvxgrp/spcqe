@@ -329,4 +329,5 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+src/spcqe/_version.py
 

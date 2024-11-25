@@ -4,7 +4,21 @@ Smooth (multi-) periodic consistent quantile estimation. We attempt to follow th
 
 ## Installation
 
-Clone the repository to your local machine and install with pip by navigating to the project directory and running:
+The package is available on both PyPI and conda-forge.
+
+pip installation:
+
+```
+pip install spcqe
+```
+
+conda installation:
+
+```
+conda install conda-forge::spcqe 
+```
+
+You may also clone the repository to your local machine and install with pip by navigating to the project directory and running:
 
 ```
 pip install .

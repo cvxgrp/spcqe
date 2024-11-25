@@ -1,23 +1,51 @@
 [build-system]
-# Minimum requirements for the build system to execute.
-requires = ["setuptools>=64", "wheel"]  # PEP 508 specifications.
+requires = ["setuptools>=64", "wheel", "setuptools_scm[toml]"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "spcqe"
-version = "0.0.1a"
 authors = [
     {name = "Mehmet Giray Ogut", email = "giray98@stanford.edu"},
+    {name = "Aramis Dufour", email = "adufour@stanford.edu"},
     {name = "Bennet Meyers", email = "bennetm@stanford.edu"}
 ]
 description = "Smooth periodic consistent quantile estimation"
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+]
 readme = "README.md"
 requires-python = ">=3.9"
-license = {text = "BSD-2-Clause"}
 dependencies = [
     "numpy",
-    "cvxpy==1.4.3",
+    "cvxpy",
     "scikit-learn",
     "tqdm",
     "sig-decomp"
 ]
+dynamic = ["version"]
+[tool.setuptools_scm]
+version_file = "src/spcqe/_version.py"
+
+[project.urls]
+Homepage = "https://github.com/cvxgrp/spcqe"
+"Bug Tracker" = "https://github.com/cvxgrp/spcqe/issues"
+
+[project.license]
+file = "LICENSE"
+
+[options]
+zip_safe = false
+include_package_data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = [ "spcqe", ]
+namespaces = false
