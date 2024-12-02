@@ -399,7 +399,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
                 t,
                 self.periods,
                 standing_wave=self.standing_wave,
-                trend=self.trend
+                trend=self.trend,
                 max_cross_k=self.max_cross_k,
                 custom_basis=self.custom_basis,
             )
