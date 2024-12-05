@@ -182,14 +182,13 @@ def plot_tails(ax, sig, quantiles, fit_quantiles, transf, method, key, index, ex
         elif method == 'linear':
             extrap_ys = linear_interp(extrap_values)
     sig_values = np.linspace(sig_m, sig_M, 1000)
-    ax.scatter(fit_quantiles[index], dist.ppf(quantiles), color='C3', marker='+', s=40, label='quantiles setpoints')
     if h_per_day is not None:
         idxs_days = np.arange(-n_days, n_days+1, 1) * h_per_day + index
         idxs_days = np.array([i for i in idxs_days if i != index])
         idxs_hours = np.arange(-n_hours, n_hours+1, 1) + index
         idxs_hours = np.array([i for i in idxs_hours if i != index])
-        ax.scatter(sig[idxs_days], transf[idxs_days], color='green', s=20, label='nearby days')
-        ax.scatter(sig[idxs_hours], transf[idxs_hours], color='orange', s=20, label='nearby hours')
+        ax.scatter(sig[idxs_days], transf[idxs_days], color='green', s=30, label='nearby days')
+        ax.scatter(sig[idxs_hours], transf[idxs_hours], color='orange', s=30, label='nearby hours')
     ax.axvline(sig[index], color='C3', linestyle='--', label='value to transform')
     ax.plot(sig_values, linear_interp(sig_values), label='linear transform')
     ax.plot(
@@ -199,6 +198,7 @@ def plot_tails(ax, sig, quantiles, fit_quantiles, transf, method, key, index, ex
         color='black',
         label='extrapolation transform'
         )
+    ax.scatter(fit_quantiles[index], dist.ppf(quantiles), color='C3', marker='+', s=150, label='quantiles setpoints')
     ax.scatter(sig[index], transf[index], color='black', marker='x', label='transformed value')
     ax.set_title(f'Transfer function from dilated signal to normal distribution - {key} tail')
     ax.legend()
