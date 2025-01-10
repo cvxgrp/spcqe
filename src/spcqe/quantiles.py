@@ -352,40 +352,6 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
     
         return Z
 
-#     TODO: not used anymore. Should be removed ?
-#     def x_expand(self, xi, tix):
-#        """
-#        
-#        """
-#        xin = np.atleast_1d(xi)
-#        h1 = np.ones_like(xin)
-#        h2 = xin
-#        h3up = [np.clip(xin - kn, 0, np.inf) for kn in self.fit_quantiles[tix][1:-1]]
-#        basis = np.r_[[h1, h2] + h3up].T
-#     return basis
-
-#    TODO: not used anymore. Should be removed ?
-#    def score(self, X, y=None):
-#        data = np.asarray(X)
-#        if len(data) != self.length and y is None:
-#            raise ValueError(
-#                "If not transforming the original fit data set, a time index must be passed as y"
-#            )
-#        # get correct basis matrix and quantile estimates for time period of prediction
-#        if y is not None:
-#            new_quantiles = self.predict(y)
-#        else:
-#            new_quantiles = self.fit_quantiles
-#        data = data[:, np.newaxis]
-#        q = self.quantiles[np.newaxis, :]
-#        score = np.sum(
-#            np.trapz(
-#                0.5 * np.abs(data - new_quantiles) + (q - 0.5) * (data - new_quantiles),
-#                x=self.quantiles,
-#            )
-#        )
-#        return score
-
     def extend_basis(self, t):
         """
         Extend the basis matrix to a new time index.
