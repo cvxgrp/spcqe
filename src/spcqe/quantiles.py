@@ -370,7 +370,6 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
                 custom_basis=self.custom_basis,
             )
             return new_basis
-            # TODO: check if this is the correct way to extend the basis
         else:
             raise NotImplementedError(
                 "Extending the basis to time before the training data not currently supported"
