@@ -16,10 +16,18 @@ jobs:
             with:
               python-version: "3.10"
 
-          - name: Install Dependencies
-            run: | 
-              sudo python -m pip install --upgrade pip
-              sudo python -m pip install -e .
+          - name: Create virtual environment
+            run: python -m venv venv
+
+          - name: Upgrade pip in virtual environment
+            run: |
+              source venv/bin/activate
+              pip install --upgrade pip
+
+          - name: Install dependencies
+            run: |
+              source venv/bin/activate
+              pip install -e .
 
           - name: Run Unit Tests
             run: sudo python -m unittest
