@@ -16,7 +16,7 @@ import scipy.stats as sps
 from scipy.interpolate import interp1d
 
 dist = sps.norm()
-XSOLAR = 0
+XSOLAR = -0.1
 YSOLAR = dist.ppf(0.99999)
 
 def get_asymptote_parameters_out(x0, _y0, x1, _y1, yasympt):
