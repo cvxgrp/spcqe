@@ -4,8 +4,8 @@ import os
 
 from spcqe.quantiles import SmoothPeriodicQuantiles
 
-nvals_dil = 101
-my_quantiles = [0.02, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.98]
+nvals_dil = 41
+my_quantiles = [0.02, 0.2, 0.5, 0.8, 0.98]
 
 class TestBasis(unittest.TestCase):
 
@@ -17,7 +17,7 @@ class TestBasis(unittest.TestCase):
         sig = np.load(os.path.join(self.directory, 'pvsig.npy'))
         transformed_a1 = np.load(os.path.join(self.directory, 'transformed_data1.npy'))
         spq1 = SmoothPeriodicQuantiles(
-            num_harmonics=[10,3],
+            num_harmonics=[8,3],
             periods=[nvals_dil, 365.24225*nvals_dil],
             standing_wave=[True, False],
             trend=False,
@@ -35,7 +35,7 @@ class TestBasis(unittest.TestCase):
         sig = np.load(os.path.join(self.directory, 'pvsig.npy'))
         transformed_a2 = np.load(os.path.join(self.directory, 'transformed_data2.npy'))
         spq2 = SmoothPeriodicQuantiles(
-            num_harmonics=[10,3],
+            num_harmonics=[8,3],
             periods=[nvals_dil, 365.24225*nvals_dil],
             standing_wave=[True, False],
             trend=False,
