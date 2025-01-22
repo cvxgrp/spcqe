@@ -10,6 +10,9 @@ using a Fourier basis.
 """
 
 from time import time
+import pickle
+import gzip
+import os
 
 import numpy as np
 from sklearn.base import TransformerMixin, BaseEstimator
@@ -441,3 +444,38 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
                 n_hours=n_hours,
                 )
         return ax
+
+def save(file, spq):
+    """
+    Save a SmoothPeriodicQuantiles object to a file.
+    
+    Parameters:
+    file : str or file-like object
+        The file or file path where the object should be saved.
+    spq : SmoothPeriodicQuantiles
+        The SmoothPeriodicQuantiles object to be saved.
+    """
+    # Ensure the directory exists
+    dir_name = os.path.dirname(file)
+    if dir_name and not os.path.exists(dir_name):
+        os.makedirs(dir_name)
+    
+    # Open the file and write the serialized object
+    with gzip.open(file, 'wb') as f:
+        pickle.dump(spq, f)
+
+def load(file):
+    """
+    Load a SmoothPeriodicQuantiles object from a file.
+    
+    Parameters:
+    file : str or file-like object
+        The file or file path where the object should be loaded from.
+    
+    Returns:
+    spq : SmoothPeriodicQuantiles
+        The SmoothPeriodicQuantiles object that was loaded.
+    """
+    with gzip.open(file, 'rb') as f:
+        spq = pickle.load(f)
+    return spq
