@@ -21,7 +21,7 @@ from sklearn.preprocessing import FunctionTransformer
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 
-from spcqe.solvers import solve_cvx, solve_osd
+from spcqe.solvers import solve_cvx_full, solve_osd, solve_cvx_sequential
 from spcqe.functions import make_basis_matrix
 from spcqe.extrapolate_asymptotic import (
     init_extrap,
@@ -117,7 +117,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
             self._sc = FunctionTransformer(lambda x: x)
 
         if self.problem == "full":
-            fit_quantiles, basis = solve_cvx(
+            fit_quantiles, basis = solve_cvx_full(
                 data,
                 self.num_harmonics,
                 self.periods,

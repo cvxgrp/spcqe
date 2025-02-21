@@ -10,7 +10,42 @@ from gfosd.components import Basis, SumQuantile
 from tqdm import tqdm
 
 
-def solve_cvx(
+def solve_cvx_sequential(
+    data,
+    num_harmonics,
+    periods,
+    standing_wave,
+    trend,
+    max_cross_k,
+    weight,
+    quantiles,
+    solver,
+    verbose,
+    custom_basis,
+):
+    quantiles = np.atleast_1d(quantiles)
+    problem, basis, theta, tau = make_cvx_problem_parameterized(
+        data,
+        num_harmonics,
+        periods,
+        standing_wave,
+        trend,
+        max_cross_k,
+        weight,
+        quantiles,
+        custom_basis,
+    )
+    thetas = np.empty((len(quantiles), basis.shape[1]), dtype=float)
+    for _ix, _q in tqdm(enumerate(quantiles), total=len(quantiles), ncols=80):
+        tau.value = _q
+        problem.solve(solver=solver, verbose=verbose)
+        thetas[_ix] = np.copy(theta.value)
+    quantile_estimates = np.sort(basis @ thetas.T, axis=1)
+    return quantile_estimates, basis
+    
+
+
+def solve_cvx_full(
     data,
     num_harmonics,
     periods,
@@ -139,6 +174,44 @@ def solve_osd(
         quantile_estimates = problem.decomposition[1]
     return quantile_estimates, basis
 
+
+def make_cvx_problem_parameterized(
+    data,
+    num_harmonics,
+    periods,
+    standing_wave,
+    trend,
+    max_cross_k,
+    weight,
+    quantiles,
+    custom_basis,
+):
+    B = make_basis_matrix(
+        num_harmonics,
+        length,
+        periods,
+        standing_wave,
+        trend,
+        max_cross_k=max_cross_k,
+        custom_basis=custom_basis,
+    )
+    D = make_regularization_matrix(
+        num_harmonics,
+        weight,
+        periods,
+        standing_wave,
+        trend,
+        max_cross_k=max_cross_k,
+        custom_basis=custom_basis,
+    )
+    theta = cvx.Variable(B.shape[1])
+    tau = cvx.Parameter(value=quantiles[0], nonneg=True)
+    model = B @ theta
+    known_set = ~np.isnan(data)
+    residual = (data - model)[known_set]
+    objective = cvx.sum(0.5 * cvx.abs(residual) + (tau - 0.5) * (residual)) + cvx.sum_squares(D @ theta)
+    problem = cvx.Problem(cvx.Minimize(objective))
+    return problem, B, theta, tau
 
 def make_cvx_problem(
     data,
