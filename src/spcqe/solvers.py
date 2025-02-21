@@ -186,6 +186,7 @@ def make_cvx_problem_parameterized(
     quantiles,
     custom_basis,
 ):
+    length = len(data)
     B = make_basis_matrix(
         num_harmonics,
         length,
