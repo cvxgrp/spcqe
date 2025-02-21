@@ -205,13 +205,13 @@ def make_cvx_problem_parameterized(
         max_cross_k=max_cross_k,
         custom_basis=custom_basis,
     )
-    theta = cvx.Variable(B.shape[1])
-    tau = cvx.Parameter(value=quantiles[0], nonneg=True)
+    theta = cp.Variable(B.shape[1])
+    tau = cp.Parameter(value=quantiles[0], nonneg=True)
     model = B @ theta
     known_set = ~np.isnan(data)
     residual = (data - model)[known_set]
-    objective = cvx.sum(0.5 * cvx.abs(residual) + (tau - 0.5) * (residual)) + cvx.sum_squares(D @ theta)
-    problem = cvx.Problem(cvx.Minimize(objective))
+    objective = cp.sum(0.5 * cp.abs(residual) + (tau - 0.5) * (residual)) + cp.sum_squares(D @ theta)
+    problem = cp.Problem(cp.Minimize(objective))
     return problem, B, theta, tau
 
 def make_cvx_problem(
