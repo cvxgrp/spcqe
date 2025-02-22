@@ -24,7 +24,7 @@ class TestBasis(unittest.TestCase):
             quantiles=my_quantiles,
             weight=10,
             problem='sequential',
-            solver='qss',
+            solver='clarabel',
             verbose=False,
         )
         spq1.fit(sig)
