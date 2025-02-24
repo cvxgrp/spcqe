@@ -21,7 +21,7 @@ from sklearn.preprocessing import FunctionTransformer
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 
-from spcqe.solvers import solve_cvx, solve_osd
+from spcqe.solvers import solve_cvx_full, solve_osd, solve_cvx_sequential
 from spcqe.functions import make_basis_matrix
 from spcqe.extrapolate_asymptotic import (
     init_extrap,
@@ -63,7 +63,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
         eps=0.01,
         standardize_data=True,
         take_log=False,
-        solver="OSD",
+        solver="CLARABEL",
         problem="sequential",
         verbose=False,
         custom_basis=None,
@@ -117,7 +117,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
             self._sc = FunctionTransformer(lambda x: x)
 
         if self.problem == "full":
-            fit_quantiles, basis = solve_cvx(
+            fit_quantiles, basis = solve_cvx_full(
                 data,
                 self.num_harmonics,
                 self.periods,
@@ -132,7 +132,7 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
                 self.custom_basis,
             )
         elif self.problem == "sequential":
-            fit_quantiles, basis = solve_osd(
+            fit_quantiles, basis = solve_cvx_sequential(
                 data,
                 self.num_harmonics,
                 self.periods,
@@ -141,7 +141,6 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
                 self.max_cross_k,
                 self.weight,
                 self.quantiles,
-                self.eps,
                 self.solver.upper(),
                 self.verbose,
                 self.custom_basis,
@@ -157,7 +156,8 @@ class SmoothPeriodicQuantiles(BaseEstimator, TransformerMixin):
             ).ravel()
         if self.take_log:
             self.fit_quantiles = np.exp(self.fit_quantiles)
-        # refit basis weights after undoing any preprocessing
+        # refit basis weights after undoing any preprocessing. also note that quantile estimates
+        # may have been reordered after the initial fit in the sequential version of the problem.
         self.fit_parameters, _, _, _ = np.linalg.lstsq(
             self.basis, self.fit_quantiles, rcond=None
         )
