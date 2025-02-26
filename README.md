@@ -36,7 +36,7 @@ pip install -e .
 ```
 from spcqe.quantiles import SmoothPeriodicQuantiles
 
-y1 = ... # some data with hourly measurement exhibiting daily, weekly, and yearly periodicities
+y1 = ... # some hourly data with daily, weekly, and yearly periodic statistics
 P1 = int(365*24)
 P2 = int(7*24)
 P3 = int(24)
