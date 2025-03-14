@@ -42,7 +42,11 @@ P2 = int(7*24)
 P3 = int(24)
 K = 3
 l = 0.1
-spq = SmoothPeriodicQuantiles(K, [P1, P2, P3], weight=l)
+spq = SmoothPeriodicQuantiles(
+  num_harmonics=K,
+  periods=[P1, P2, P3],
+  weight=l
+)
 spq.fit(y1)
 ```
 
